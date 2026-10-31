@@ -167,7 +167,7 @@ class UnoChessGame(
         // Keep the used card in hand until a replacement has been secured.
         // This preserves exactly 10 cards across both hands when the 30-card pool is rebuilt.
         ensureDrawCapacity(1)
-        val replacement = drawPile.removeLast()
+        val replacement = drawPile.removeAt(drawPile.lastIndex)
         playerHand += replacement
         playerHand.removeAll { it.id == card.id }
 
@@ -198,7 +198,7 @@ class UnoChessGame(
 
         // If fewer than 2 cards remain, rebuild before drawing so both hands still contain 10 cards.
         ensureDrawCapacity(2)
-        val drawn = listOf(drawPile.removeLast(), drawPile.removeLast())
+        val drawn = listOf(drawPile.removeAt(drawPile.lastIndex), drawPile.removeAt(drawPile.lastIndex))
 
         // Add replacements first, then remove the selected cards: 5 -> 7 -> 5.
         playerHand += drawn
