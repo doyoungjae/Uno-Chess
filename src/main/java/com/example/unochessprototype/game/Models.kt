@@ -6,7 +6,7 @@ enum class Player {
 
     fun opposite(): Player = if (this == WHITE) BLACK else WHITE
 
-    fun displayName(): String = if (this == WHITE) "PLAYER 1 (WHITE)" else "PLAYER 2 (BLACK)"
+    fun displayName(): String = if (this == WHITE) "WHITE" else "BLACK"
 }
 
 enum class PieceType {

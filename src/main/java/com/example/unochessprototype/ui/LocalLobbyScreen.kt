@@ -62,7 +62,7 @@ fun LocalLobbyScreen(
         PlayerLobbyCard(
             avatar = profile.avatar,
             name = profile.nickname,
-            side = "WHITE · PLAYER 1",
+            side = "PLAYER 1 · 선공 미정",
             ready = true,
         )
 
@@ -71,7 +71,7 @@ fun LocalLobbyScreen(
         PlayerLobbyCard(
             avatar = "♜",
             name = opponentName.ifBlank { "PLAYER 2" },
-            side = "BLACK · PLAYER 2",
+            side = "PLAYER 2 · 선공 미정",
             ready = player2Ready,
         )
 
@@ -89,6 +89,8 @@ fun LocalLobbyScreen(
                 Text("• 손패 5장 고정", fontSize = 13.sp)
                 Text("• 숫자 1~8 → A~H 열", fontSize = 13.sp)
                 Text("• JOKER → 원하는 이동 가능 열", fontSize = 13.sp)
+                Text("• 게임 시작 전 1~8 숫자 카드로 선공 결정", fontSize = 13.sp)
+                Text("• 높은 숫자 = WHITE · 선공", fontSize = 13.sp)
                 Text("• KING 직접 포획 시 승리", fontSize = 13.sp)
                 Text("• 캐슬링/앙파상/체크메이트 없음", fontSize = 13.sp)
             }

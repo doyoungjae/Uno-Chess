@@ -51,7 +51,7 @@ private val AppText = Color(0xFFF1F6EE)
 private val AppMuted = Color(0xFFAAB8AE)
 private val AppBorder = Color(0xFF2D4A38)
 
-enum class AppScreen { HOME, PROFILE, SETTINGS, LOBBY, GAME }
+enum class AppScreen { HOME, PROFILE, SETTINGS, LOBBY, FIRST_TURN, GAME }
 
 @Composable
 fun UnoChessApp() {
@@ -61,6 +61,7 @@ fun UnoChessApp() {
     var settings by remember { mutableStateOf(preferences.loadSettings()) }
     var screen by remember { mutableStateOf(AppScreen.HOME) }
     var opponentName by remember { mutableStateOf("PLAYER 2") }
+    var player1IsWhite by remember { mutableStateOf(true) }
 
     val colors = darkColorScheme(
         primary = AppGreen,
@@ -108,20 +109,35 @@ fun UnoChessApp() {
                     profile = profile,
                     opponentName = opponentName,
                     onOpponentNameChange = { opponentName = it.take(16) },
-                    onStart = { screen = AppScreen.GAME },
+                    onStart = { screen = AppScreen.FIRST_TURN },
                     onBack = { screen = AppScreen.HOME },
+                )
+
+
+                AppScreen.FIRST_TURN -> FirstTurnDrawScreen(
+                    profile = profile,
+                    opponentName = opponentName,
+                    onDecided = { isPlayer1White ->
+                        player1IsWhite = isPlayer1White
+                        screen = AppScreen.GAME
+                    },
+                    onBack = { screen = AppScreen.LOBBY },
                 )
 
                 AppScreen.GAME -> UnoChessGameScreen(
                     profile = profile,
                     opponentName = opponentName.ifBlank { "PLAYER 2" },
                     settings = settings,
+                    player1IsWhite = player1IsWhite,
                     onExit = { screen = AppScreen.HOME },
+                    onRematch = { screen = AppScreen.FIRST_TURN },
                     onGameFinished = { result ->
                         val updated = when (result) {
                             is GameResult.Win -> profile.copy(
                                 games = profile.games + 1,
-                                wins = profile.wins + if (result.winner.name == "WHITE") 1 else 0,
+                                wins = profile.wins + if (
+                                    result.winner == if (player1IsWhite) com.example.unochessprototype.game.Player.WHITE else com.example.unochessprototype.game.Player.BLACK
+                                ) 1 else 0,
                             )
                             is GameResult.Draw -> profile.copy(
                                 games = profile.games + 1,

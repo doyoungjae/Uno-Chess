@@ -77,3 +77,5 @@ class UnoChessGameTest {
         assertEquals(PieceType.KING, outcome.capturedPiece!!.type)
     }
 }
+
+// 선공 결정 보조 로직 테스트는 게임 덱과 독립적으로 1~8 범위와 승패를 검증한다.

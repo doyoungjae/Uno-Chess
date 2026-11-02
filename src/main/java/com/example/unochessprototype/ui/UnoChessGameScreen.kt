@@ -1,6 +1,5 @@
 package com.example.unochessprototype.ui
 
-import androidx.compose.material3.Surface
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +25,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -72,7 +72,9 @@ fun UnoChessGameScreen(
     profile: LocalProfile,
     opponentName: String,
     settings: LocalSettings,
+    player1IsWhite: Boolean,
     onExit: () -> Unit,
+    onRematch: () -> Unit,
     onGameFinished: (GameResult) -> Unit,
 ) {
     val game = remember { UnoChessGame() }
@@ -97,10 +99,16 @@ fun UnoChessGameScreen(
     val result = remember(revision) { game.result }
     val canExchange = remember(revision) { game.canExchangeTwoCards() }
     val selectedCard = hand.firstOrNull { it.id == selectedCardId }
-    val currentName = if (game.currentPlayer == Player.WHITE) profile.nickname else opponentName
-    val opponentCurrentName = if (game.currentPlayer == Player.WHITE) opponentName else profile.nickname
-    val currentAvatar = if (game.currentPlayer == Player.WHITE) profile.avatar else "♜"
-    val opponentAvatar = if (game.currentPlayer == Player.WHITE) "♜" else profile.avatar
+
+    val whiteName = if (player1IsWhite) profile.nickname else opponentName
+    val blackName = if (player1IsWhite) opponentName else profile.nickname
+    val whiteAvatar = if (player1IsWhite) profile.avatar else "♜"
+    val blackAvatar = if (player1IsWhite) "♜" else profile.avatar
+
+    val currentName = if (game.currentPlayer == Player.WHITE) whiteName else blackName
+    val opponentCurrentName = if (game.currentPlayer == Player.WHITE) blackName else whiteName
+    val currentAvatar = if (game.currentPlayer == Player.WHITE) whiteAvatar else blackAvatar
+    val opponentAvatar = if (game.currentPlayer == Player.WHITE) blackAvatar else whiteAvatar
 
     val legalMoves = if (selectedCardId != null && activeFile != null && selectedFrom != null) {
         game.legalMovesForCard(selectedCardId!!, if (selectedCard?.isJoker == true) activeFile else null)
@@ -230,7 +238,7 @@ fun UnoChessGameScreen(
 
         if (showTurnCover && result == null) {
             TurnHandoffOverlay(
-                playerName = if (game.currentPlayer == Player.WHITE) profile.nickname else opponentName,
+                playerName = if (game.currentPlayer == Player.WHITE) whiteName else blackName,
                 player = game.currentPlayer,
                 onReady = { showTurnCover = false },
             )
@@ -243,14 +251,9 @@ fun UnoChessGameScreen(
         if (result != null) {
             ResultOverlay(
                 result = result,
-                whiteName = profile.nickname,
-                blackName = opponentName,
-                onRematch = {
-                    game.reset()
-                    clearSelection()
-                    showTurnCover = false
-                    refresh()
-                },
+                whiteName = whiteName,
+                blackName = blackName,
+                onRematch = onRematch,
                 onHome = onExit,
             )
         }
