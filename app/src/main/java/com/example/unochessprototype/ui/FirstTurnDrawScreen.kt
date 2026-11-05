@@ -71,7 +71,11 @@ fun FirstTurnDrawScreen(
         ) {
             Column {
                 Text("선공 결정", fontSize = 22.sp, fontWeight = FontWeight.Black)
-                Text("1~8 중 높은 숫자를 뽑은 플레이어가 WHITE · 선공", color = DrawMuted, fontSize = 12.sp)
+                Text(
+                    "1~8 중 높은 숫자를 뽑은 플레이어가 WHITE · 선공",
+                    color = DrawMuted,
+                    fontSize = 12.sp,
+                )
             }
             OutlinedButton(onClick = onBack) { Text("대기실") }
         }
@@ -118,9 +122,12 @@ fun FirstTurnDrawScreen(
                 result?.winner == LocalPlayerSlot.PLAYER2 -> "${opponentName.ifBlank { "PLAYER 2" }} 선공 · WHITE 배정"
                 else -> "선공을 결정합니다."
             }
+
             Text(
                 text = message,
-                modifier = Modifier.fillMaxWidth().padding(14.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
             )
@@ -141,7 +148,9 @@ fun FirstTurnDrawScreen(
                         player1Card = null
                         player2Card = null
                     },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = DrawLime),
                 ) {
                     Text("다시 뽑기", color = Color(0xFF0B160D), fontWeight = FontWeight.Black)
@@ -150,8 +159,10 @@ fun FirstTurnDrawScreen(
 
             result?.winner != null -> {
                 Button(
-                    onClick = { onDecided(result?.winner == LocalPlayerSlot.PLAYER1) },
-                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    onClick = { onDecided(result.winner == LocalPlayerSlot.PLAYER1) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = DrawLime),
                 ) {
                     Text("게임 시작", color = Color(0xFF0B160D), fontWeight = FontWeight.Black)
@@ -182,8 +193,15 @@ private fun DrawPlayerRow(
         Box(
             modifier = Modifier
                 .size(width = 64.dp, height = 88.dp)
-                .background(if (card == null) Color(0xFF0D2C1C) else Color(0xFFF0F0E6), RoundedCornerShape(10.dp))
-                .border(2.dp, if (card == null) DrawLime.copy(alpha = 0.55f) else DrawBorder, RoundedCornerShape(10.dp)),
+                .background(
+                    if (card == null) Color(0xFF0D2C1C) else Color(0xFFF0F0E6),
+                    RoundedCornerShape(10.dp),
+                )
+                .border(
+                    2.dp,
+                    if (card == null) DrawLime.copy(alpha = 0.55f) else DrawBorder,
+                    RoundedCornerShape(10.dp),
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Text(

@@ -33,15 +33,6 @@ class ChessBoard private constructor(
 
     fun snapshot(): List<List<Piece?>> = cells.map { row -> row.toList() }
 
-    /**
-     * Standard chess movement only.
-     * Intentionally NOT implemented:
-     * - check / checkmate validation
-     * - castling
-     * - en passant
-     *
-     * This means a king may move into an attacked square. UNO Chess ends by direct king capture.
-     */
     fun legalMovesFrom(from: Square): List<Move> {
         val piece = pieceAt(from) ?: return emptyList()
         val result = mutableListOf<Move>()
@@ -79,14 +70,12 @@ class ChessBoard private constructor(
                 ray(0, 1)
                 ray(0, -1)
             }
-
             PieceType.BISHOP -> {
                 ray(1, 1)
                 ray(1, -1)
                 ray(-1, 1)
                 ray(-1, -1)
             }
-
             PieceType.QUEEN -> {
                 ray(1, 0)
                 ray(-1, 0)
@@ -97,7 +86,6 @@ class ChessBoard private constructor(
                 ray(-1, 1)
                 ray(-1, -1)
             }
-
             PieceType.KNIGHT -> {
                 listOf(
                     2 to 1,
@@ -110,17 +98,13 @@ class ChessBoard private constructor(
                     -1 to -2,
                 ).forEach { (dr, dc) -> addIfValid(from.row + dr, from.col + dc) }
             }
-
             PieceType.KING -> {
                 for (dr in -1..1) {
                     for (dc in -1..1) {
-                        if (dr != 0 || dc != 0) {
-                            addIfValid(from.row + dr, from.col + dc)
-                        }
+                        if (dr != 0 || dc != 0) addIfValid(from.row + dr, from.col + dc)
                     }
                 }
             }
-
             PieceType.PAWN -> {
                 val direction = if (piece.player == Player.WHITE) -1 else 1
                 val startRow = if (piece.player == Player.WHITE) 6 else 1
@@ -128,7 +112,6 @@ class ChessBoard private constructor(
 
                 if (oneStepRow in 0..7 && cells[oneStepRow][from.col] == null) {
                     result += Move(from, Square(oneStepRow, from.col))
-
                     val twoStepRow = from.row + 2 * direction
                     if (
                         from.row == startRow &&
@@ -172,9 +155,7 @@ class ChessBoard private constructor(
         if (file !in 0..7) return false
         for (row in 0..7) {
             val piece = cells[row][file]
-            if (piece?.player == player && legalMovesFrom(Square(row, file)).isNotEmpty()) {
-                return true
-            }
+            if (piece?.player == player && legalMovesFrom(Square(row, file)).isNotEmpty()) return true
         }
         return false
     }
@@ -197,12 +178,7 @@ class ChessBoard private constructor(
             ((piece.player == Player.WHITE && move.to.row == 0) ||
                 (piece.player == Player.BLACK && move.to.row == 7))
 
-        val finalPiece = if (promoted) {
-            Piece(piece.player, PieceType.QUEEN)
-        } else {
-            piece
-        }
-
+        val finalPiece = if (promoted) Piece(piece.player, PieceType.QUEEN) else piece
         cells[move.to.row][move.to.col] = finalPiece
 
         return MoveOutcome(
@@ -213,7 +189,6 @@ class ChessBoard private constructor(
         )
     }
 
-    // Used only by local unit tests / prototype debugging.
     internal fun clearForTest() {
         for (row in 0..7) for (col in 0..7) cells[row][col] = null
     }

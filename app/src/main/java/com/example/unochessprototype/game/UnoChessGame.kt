@@ -100,9 +100,7 @@ class UnoChessGame(
             for (row in 0..7) {
                 val from = Square(row, file)
                 val piece = board.pieceAt(from)
-                if (piece?.player == currentPlayer) {
-                    addAll(board.legalMovesFrom(from))
-                }
+                if (piece?.player == currentPlayer) addAll(board.legalMovesFrom(from))
             }
         }
     }
@@ -141,31 +139,20 @@ class UnoChessGame(
         )
 
         if (outcome.capturedPiece != null) {
-            log(
-                "${player.displayName()} · ${outcome.capturedPiece.player} " +
-                    "${outcome.capturedPiece.type} 포획"
-            )
+            log("${player.displayName()} · ${outcome.capturedPiece.player} ${outcome.capturedPiece.type} 포획")
         }
 
         if (outcome.promoted) {
             log("${player.displayName()} · PAWN ${move.to.algebraic()} 도달 → QUEEN 자동 승급")
         }
 
-        // King capture ends the game immediately. No replacement card is drawn.
         if (outcome.capturedPiece?.type == PieceType.KING) {
             playerHand.removeAll { it.id == card.id }
             result = GameResult.Win(player)
             log("게임 종료 · ${player.displayName()} 승리 · KING 직접 포획")
-            return PlayResult(
-                moveOutcome = outcome,
-                usedCard = card,
-                replacementCard = null,
-                gameResult = result,
-            )
+            return PlayResult(outcome, card, null, result)
         }
 
-        // Keep the used card in hand until a replacement has been secured.
-        // This preserves exactly 10 cards across both hands when the 30-card pool is rebuilt.
         ensureDrawCapacity(1)
         val replacement = drawPile.removeAt(drawPile.lastIndex)
         playerHand += replacement
@@ -176,12 +163,7 @@ class UnoChessGame(
 
         finishTurn()
 
-        return PlayResult(
-            moveOutcome = outcome,
-            usedCard = card,
-            replacementCard = replacement,
-            gameResult = result,
-        )
+        return PlayResult(outcome, card, replacement, result)
     }
 
     fun exchangeTwoCards(cardIds: Set<Int>): ExchangeResult {
@@ -196,11 +178,12 @@ class UnoChessGame(
                 ?: error("Selected exchange card is not in the current player's hand.")
         }
 
-        // If fewer than 2 cards remain, rebuild before drawing so both hands still contain 10 cards.
         ensureDrawCapacity(2)
-        val drawn = listOf(drawPile.removeAt(drawPile.lastIndex), drawPile.removeAt(drawPile.lastIndex))
+        val drawn = listOf(
+            drawPile.removeAt(drawPile.lastIndex),
+            drawPile.removeAt(drawPile.lastIndex),
+        )
 
-        // Add replacements first, then remove the selected cards: 5 -> 7 -> 5.
         playerHand += drawn
         val discardedIds = discarded.map { it.id }.toSet()
         playerHand.removeAll { it.id in discardedIds }
@@ -215,11 +198,7 @@ class UnoChessGame(
 
         finishTurn()
 
-        return ExchangeResult(
-            discardedCards = discarded,
-            drawnCards = drawn,
-            gameResult = result,
-        )
+        return ExchangeResult(discarded, drawn, result)
     }
 
     private fun finishTurn() {
@@ -251,12 +230,6 @@ class UnoChessGame(
         check(drawPile.size >= required) { "Not enough cards after rebuilding the draw pile." }
     }
 
-    /**
-     * Both hands are kept at five cards when this function is called.
-     * Therefore exactly 10 cards are excluded and the other 30 cards are shuffled.
-     *
-     * Number-card colors remain only visual identities; there is no floor-card or color-matching rule.
-     */
     private fun rebuildThirtyCardPool() {
         val handIds = hands.values.flatten().map { it.id }.toSet()
         check(handIds.size == HAND_SIZE * 2) { "Deck rebuild requires exactly 10 unique cards in hands." }
@@ -292,7 +265,6 @@ class UnoChessGame(
         return cards
     }
 
-    // Test-only helpers. They are internal so normal UI code does not depend on them.
     internal fun boardForTest(): ChessBoard = board
 
     internal fun forceHandsForTest(white: List<UnoCard>, black: List<UnoCard>) {

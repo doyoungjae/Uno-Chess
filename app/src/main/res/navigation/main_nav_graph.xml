@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.unochessprototype.ui.fragment.HomeFragment"
+        android:label="Home" />
+
+    <fragment
+        android:id="@+id/localGameFragment"
+        android:name="com.example.unochessprototype.ui.fragment.LocalGameFragment"
+        android:label="Local" />
+
+    <fragment
+        android:id="@+id/onlineFragment"
+        android:name="com.example.unochessprototype.ui.fragment.OnlineFragment"
+        android:label="Online" />
+
+    <fragment
+        android:id="@+id/profileSettingsFragment"
+        android:name="com.example.unochessprototype.ui.fragment.ProfileSettingsFragment"
+        android:label="Profile" />
+
+    <fragment
+        android:id="@+id/firstTurnFragment"
+        android:name="com.example.unochessprototype.ui.fragment.FirstTurnFragment"
+        android:label="First Turn" />
+
+    <fragment
+        android:id="@+id/gameFragment"
+        android:name="com.example.unochessprototype.ui.fragment.GameFragment"
+        android:label="Game" />
+
+</navigation>

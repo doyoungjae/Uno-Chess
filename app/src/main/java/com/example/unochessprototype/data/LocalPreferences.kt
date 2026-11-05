@@ -1,6 +1,7 @@
 package com.example.unochessprototype.data
 
 import android.content.Context
+import java.util.UUID
 
 private const val PREFS_NAME = "uno_chess_local"
 
@@ -10,6 +11,7 @@ data class LocalProfile(
     val games: Int = 0,
     val wins: Int = 0,
     val draws: Int = 0,
+    val userId: String = "",
 )
 
 data class LocalSettings(
@@ -25,12 +27,27 @@ data class LocalSettings(
 class LocalPreferences(context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    private fun getOrCreateUserId(): String {
+        val existing = prefs.getString("userId", null)
+        if (!existing.isNullOrBlank()) return existing
+
+        val generated = "UC-" + UUID.randomUUID()
+            .toString()
+            .replace("-", "")
+            .take(8)
+            .uppercase()
+
+        prefs.edit().putString("userId", generated).apply()
+        return generated
+    }
+
     fun loadProfile(): LocalProfile = LocalProfile(
         nickname = prefs.getString("nickname", "PLAYER 1") ?: "PLAYER 1",
         avatar = prefs.getString("avatar", "♞") ?: "♞",
         games = prefs.getInt("games", 0),
         wins = prefs.getInt("wins", 0),
         draws = prefs.getInt("draws", 0),
+        userId = getOrCreateUserId(),
     )
 
     fun saveProfile(profile: LocalProfile) {
@@ -40,6 +57,7 @@ class LocalPreferences(context: Context) {
             .putInt("games", profile.games)
             .putInt("wins", profile.wins)
             .putInt("draws", profile.draws)
+            .putString("userId", profile.userId.ifBlank { getOrCreateUserId() })
             .apply()
     }
 
