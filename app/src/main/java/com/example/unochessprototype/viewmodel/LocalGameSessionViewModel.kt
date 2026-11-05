@@ -10,38 +10,44 @@ class LocalGameSessionViewModel(
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    var opponentName by mutableStateOf(
+    private var opponentNameState by mutableStateOf(
         savedStateHandle[KEY_OPPONENT] ?: "PLAYER 2"
     )
-        private set
 
-    var player2Ready by mutableStateOf(
+    private var player2ReadyState by mutableStateOf(
         savedStateHandle[KEY_READY] ?: false
     )
-        private set
 
-    var player1IsWhite by mutableStateOf(
+    private var player1IsWhiteState by mutableStateOf(
         savedStateHandle[KEY_PLAYER1_WHITE] ?: true
     )
-        private set
 
-    fun updateOpponentName(value: String) {
-        opponentName = value.take(16)
-        savedStateHandle[KEY_OPPONENT] = opponentName
+    val opponentName: String
+        get() = opponentNameState
+
+    val player2Ready: Boolean
+        get() = player2ReadyState
+
+    val player1IsWhite: Boolean
+        get() = player1IsWhiteState
+
+    fun setOpponentName(value: String) {
+        opponentNameState = value.take(16)
+        savedStateHandle[KEY_OPPONENT] = opponentNameState
     }
 
-    fun updatePlayer2Ready(value: Boolean) {
-        player2Ready = value
+    fun setPlayer2Ready(value: Boolean) {
+        player2ReadyState = value
         savedStateHandle[KEY_READY] = value
     }
 
     fun setFirstPlayer(player1Starts: Boolean) {
-        player1IsWhite = player1Starts
+        player1IsWhiteState = player1Starts
         savedStateHandle[KEY_PLAYER1_WHITE] = player1Starts
     }
 
     fun prepareNewMatch() {
-        updatePlayer2Ready(false)
+        setPlayer2Ready(false)
     }
 
     companion object {
