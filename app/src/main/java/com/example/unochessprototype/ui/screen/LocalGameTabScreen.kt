@@ -28,12 +28,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.unochessprototype.data.LocalProfile
+import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.ui.theme.UnoChessColors
 
 @Composable
 fun LocalGameTabScreen(
-    profile: LocalProfile,
+    profile: OnlineProfile,
     opponentName: String,
     player2Ready: Boolean,
     onOpponentNameChange: (String) -> Unit,

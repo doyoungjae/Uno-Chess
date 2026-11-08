@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,12 +34,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.unochessprototype.data.LocalProfile
+import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.ui.theme.UnoChessColors
 
 @Composable
 fun HomeTabScreen(
-    profile: LocalProfile,
+    profile: OnlineProfile,
+    profileConnected: Boolean,
     onLocalGame: () -> Unit,
     onOnlineGame: () -> Unit,
     onProfile: () -> Unit,
@@ -62,6 +63,7 @@ fun HomeTabScreen(
                     Text("UNO CHESS", fontWeight = FontWeight.Black, fontSize = 25.sp, color = UnoChessColors.Lime)
                     Text("카드로 열을 열고, 체스로 승부하세요", color = UnoChessColors.Muted, fontSize = 12.sp)
                 }
+
                 Surface(
                     modifier = Modifier.clickable { onProfile() },
                     shape = RoundedCornerShape(18.dp),
@@ -80,7 +82,12 @@ fun HomeTabScreen(
                         Spacer(Modifier.width(8.dp))
                         Column {
                             Text(profile.nickname, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                            Text(profile.userId, color = UnoChessColors.Muted, fontSize = 9.sp)
+                            Text(
+                                if (profileConnected) "ONLINE PROFILE" else "CONNECTING...",
+                                color = if (profileConnected) UnoChessColors.Lime else UnoChessColors.Muted,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }
@@ -90,12 +97,30 @@ fun HomeTabScreen(
         item { HeroBoardCard() }
 
         item {
+            Text("온라인 전적", fontWeight = FontWeight.Black, fontSize = 17.sp)
+        }
+
+        item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                StatChip("게임", profile.games.toString(), Modifier.weight(1f))
-                StatChip("승리", profile.wins.toString(), Modifier.weight(1f))
-                val rate = if (profile.games == 0) 0 else (profile.wins * 100 / profile.games)
-                StatChip("승률", "$rate%", Modifier.weight(1f))
+                StatChip("경기", profile.onlineGames.toString(), Modifier.weight(1f))
+                StatChip("승리", profile.onlineWins.toString(), Modifier.weight(1f))
+                StatChip("승률", "${profile.winRate}%", Modifier.weight(1f))
             }
+        }
+
+        item {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                StatChip("패배", profile.onlineLosses.toString(), Modifier.weight(1f))
+                StatChip("무승부", profile.onlineDraws.toString(), Modifier.weight(1f))
+            }
+        }
+
+        item {
+            Text(
+                "로컬 대전 결과는 온라인 전적에 반영되지 않습니다.",
+                color = UnoChessColors.Muted,
+                fontSize = 10.sp,
+            )
         }
 
         item {
@@ -105,8 +130,8 @@ fun HomeTabScreen(
         item {
             GameModeCard(
                 title = "로컬 게임",
-                subtitle = "한 기기에서 2명이 번갈아 플레이",
-                enabled = true,
+                subtitle = "한 기기에서 2명이 번갈아 플레이 · 전적 미반영",
+                iconOnline = false,
                 onClick = onLocalGame,
             )
         }
@@ -114,8 +139,8 @@ fun HomeTabScreen(
         item {
             GameModeCard(
                 title = "온라인 게임",
-                subtitle = "Firebase 실시간 대전 · 마지막 개발 단계에서 연결",
-                enabled = false,
+                subtitle = "Firebase 온라인 로비로 이동",
+                iconOnline = true,
                 onClick = onOnlineGame,
             )
         }
@@ -143,7 +168,7 @@ private fun HeroBoardCard() {
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Icon(Icons.Rounded.SportsEsports, contentDescription = null, tint = UnoChessColors.Lime, modifier = Modifier.size(17.dp))
-                    Text("LOCAL PLAY READY", color = UnoChessColors.Lime, fontSize = 11.sp, fontWeight = FontWeight.Black)
+                    Text("UNO CHESS READY", color = UnoChessColors.Lime, fontSize = 11.sp, fontWeight = FontWeight.Black)
                 }
             }
             MiniBoard()
@@ -193,7 +218,10 @@ private fun MiniBoard() {
 @Composable
 private fun StatChip(label: String, value: String, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = UnoChessColors.SurfaceRaised)) {
-        Column(modifier = Modifier.padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(value, fontWeight = FontWeight.Black, fontSize = 18.sp)
             Text(label, color = UnoChessColors.Muted, fontSize = 10.sp)
         }
@@ -204,11 +232,11 @@ private fun StatChip(label: String, value: String, modifier: Modifier = Modifier
 private fun GameModeCard(
     title: String,
     subtitle: String,
-    enabled: Boolean,
+    iconOnline: Boolean,
     onClick: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface),
         shape = RoundedCornerShape(20.dp),
     ) {
@@ -218,26 +246,22 @@ private fun GameModeCard(
         ) {
             Box(
                 modifier = Modifier.size(48.dp).background(
-                    if (enabled) UnoChessColors.Lime.copy(alpha = 0.14f) else UnoChessColors.SurfaceRaised,
+                    UnoChessColors.Lime.copy(alpha = 0.14f),
                     RoundedCornerShape(15.dp),
                 ),
                 contentAlignment = Alignment.Center,
             ) {
-                if (enabled) {
-                    Icon(Icons.Rounded.SportsEsports, contentDescription = null, tint = UnoChessColors.Lime)
-                } else {
-                    Icon(Icons.Rounded.Lock, contentDescription = null, tint = UnoChessColors.Muted)
-                }
+                Icon(
+                    if (iconOnline) Icons.Rounded.Public else Icons.Rounded.SportsEsports,
+                    contentDescription = null,
+                    tint = UnoChessColors.Lime,
+                )
             }
             Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
                 Text(title, fontWeight = FontWeight.Black)
                 Text(subtitle, color = UnoChessColors.Muted, fontSize = 11.sp)
             }
-            Icon(
-                Icons.Rounded.ArrowForward,
-                contentDescription = null,
-                tint = if (enabled) UnoChessColors.Lime else UnoChessColors.Muted,
-            )
+            Icon(Icons.Rounded.ArrowForward, contentDescription = null, tint = UnoChessColors.Lime)
         }
     }
 }

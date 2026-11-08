@@ -20,11 +20,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,23 +35,27 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.unochessprototype.data.LocalProfile
 import com.example.unochessprototype.data.LocalSettings
+import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.ui.theme.UnoChessColors
 import com.example.unochessprototype.ui.theme.boardPalette
 
 @Composable
 fun ProfileSettingsTabScreen(
-    profile: LocalProfile,
+    profile: OnlineProfile,
+    profileLoading: Boolean,
+    profileError: String?,
+    saveMessage: String?,
     settings: LocalSettings,
-    onSave: (LocalProfile, LocalSettings) -> Unit,
+    onSaveOnlineIdentity: (String, String) -> Unit,
+    onSaveSettings: (LocalSettings) -> Unit,
+    onRetryProfile: () -> Unit,
 ) {
-    var nickname by rememberSaveable(profile.nickname) { mutableStateOf(profile.nickname) }
-    var avatar by rememberSaveable(profile.avatar) { mutableStateOf(profile.avatar) }
+    var nickname by rememberSaveable { mutableStateOf(profile.nickname) }
+    var avatar by rememberSaveable { mutableStateOf(profile.avatar) }
     var bgmEnabled by rememberSaveable(settings.bgmEnabled) { mutableStateOf(settings.bgmEnabled) }
     var effectsEnabled by rememberSaveable(settings.effectsEnabled) { mutableStateOf(settings.effectsEnabled) }
     var bgmVolume by rememberSaveable(settings.bgmVolume) { mutableFloatStateOf(settings.bgmVolume) }
@@ -57,6 +63,13 @@ fun ProfileSettingsTabScreen(
     var moveHints by rememberSaveable(settings.moveHints) { mutableStateOf(settings.moveHints) }
     var showCoordinates by rememberSaveable(settings.showCoordinates) { mutableStateOf(settings.showCoordinates) }
     var boardTheme by rememberSaveable(settings.boardTheme) { mutableIntStateOf(settings.boardTheme) }
+
+    LaunchedEffect(profile.uid, profile.nickname, profile.avatar) {
+        if (profile.uid.isNotBlank()) {
+            nickname = profile.nickname
+            avatar = profile.avatar
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -69,7 +82,7 @@ fun ProfileSettingsTabScreen(
         item {
             Column {
                 Text("프로필 · 설정", fontSize = 24.sp, fontWeight = FontWeight.Black)
-                Text("로컬 프로필과 게임 환경 설정", color = UnoChessColors.Muted, fontSize = 12.sp)
+                Text("온라인 프로필과 게임 환경 설정", color = UnoChessColors.Muted, fontSize = 12.sp)
             }
         }
 
@@ -84,10 +97,23 @@ fun ProfileSettingsTabScreen(
                             modifier = Modifier.size(58.dp).background(UnoChessColors.SurfaceRaised, CircleShape),
                             contentAlignment = Alignment.Center,
                         ) { Text(avatar, fontSize = 32.sp) }
-                        Column(modifier = Modifier.padding(start = 12.dp)) {
-                            Text(nickname.ifBlank { "PLAYER 1" }, fontWeight = FontWeight.Black, fontSize = 17.sp)
-                            Text(profile.userId, color = UnoChessColors.Lime, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            Text("온라인 구현 시 계정 UID와 연결 가능한 로컬 식별자", color = UnoChessColors.Muted, fontSize = 9.sp)
+
+                        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text(nickname.ifBlank { "PLAYER" }, fontWeight = FontWeight.Black, fontSize = 17.sp)
+                            Text("온라인 대전에서 다른 사용자에게 표시되는 프로필", color = UnoChessColors.Muted, fontSize = 10.sp)
+                        }
+
+                        if (profileLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                        }
+                    }
+
+                    if (profileError != null) {
+                        Card(colors = CardDefaults.cardColors(containerColor = UnoChessColors.SurfaceRaised)) {
+                            Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(profileError, color = UnoChessColors.Warning, fontSize = 11.sp)
+                                Button(onClick = onRetryProfile) { Text("Firebase 다시 연결") }
+                            }
                         }
                     }
 
@@ -95,8 +121,10 @@ fun ProfileSettingsTabScreen(
                         value = nickname,
                         onValueChange = { nickname = it.take(16) },
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("닉네임") },
+                        label = { Text("온라인 닉네임") },
+                        supportingText = { Text("방 목록과 온라인 대전에서 이 이름을 사용합니다. 최대 16자") },
                         singleLine = true,
+                        enabled = !profileLoading,
                     )
 
                     Text("사용자 아이콘", fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -115,11 +143,19 @@ fun ProfileSettingsTabScreen(
                                         if (selected) Modifier.border(1.5.dp, UnoChessColors.Lime, RoundedCornerShape(12.dp))
                                         else Modifier
                                     )
-                                    .clickable { avatar = item },
+                                    .clickable(enabled = !profileLoading) { avatar = item },
                                 contentAlignment = Alignment.Center,
                             ) { Text(item, fontSize = 22.sp) }
                         }
                     }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        StatBox("경기", profile.onlineGames.toString(), Modifier.weight(1f))
+                        StatBox("승", profile.onlineWins.toString(), Modifier.weight(1f))
+                        StatBox("패", profile.onlineLosses.toString(), Modifier.weight(1f))
+                        StatBox("무", profile.onlineDraws.toString(), Modifier.weight(1f))
+                    }
+                    Text("온라인 승률 ${profile.winRate}% · 로컬 대전은 이 전적에 포함되지 않습니다.", color = UnoChessColors.Muted, fontSize = 10.sp)
                 }
             }
         }
@@ -131,7 +167,6 @@ fun ProfileSettingsTabScreen(
                 Slider(value = bgmVolume, onValueChange = { bgmVolume = it }, enabled = bgmEnabled)
                 ToggleRow("효과음", "카드 선택·기물 이동·포획 효과음", effectsEnabled) { effectsEnabled = it }
                 Slider(value = effectsVolume, onValueChange = { effectsVolume = it }, enabled = effectsEnabled)
-                Text("※ 실제 음원 파일은 추후 팀에서 선택한 뒤 SoundPool/Media3에 연결할 수 있습니다.", color = UnoChessColors.Muted, fontSize = 9.sp)
             }
         }
 
@@ -157,25 +192,50 @@ fun ProfileSettingsTabScreen(
         item {
             Button(
                 onClick = {
-                    val newProfile = profile.copy(
-                        nickname = nickname.ifBlank { "PLAYER 1" },
-                        avatar = avatar,
+                    onSaveOnlineIdentity(nickname, avatar)
+                    onSaveSettings(
+                        settings.copy(
+                            bgmEnabled = bgmEnabled,
+                            effectsEnabled = effectsEnabled,
+                            bgmVolume = bgmVolume,
+                            effectsVolume = effectsVolume,
+                            moveHints = moveHints,
+                            showCoordinates = showCoordinates,
+                            boardTheme = boardTheme,
+                        )
                     )
-                    val newSettings = settings.copy(
-                        bgmEnabled = bgmEnabled,
-                        effectsEnabled = effectsEnabled,
-                        bgmVolume = bgmVolume,
-                        effectsVolume = effectsVolume,
-                        moveHints = moveHints,
-                        showCoordinates = showCoordinates,
-                        boardTheme = boardTheme,
-                    )
-                    onSave(newProfile, newSettings)
                 },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !profileLoading,
             ) {
-                Text("설정 저장", fontWeight = FontWeight.Black)
+                Text("프로필 · 설정 저장", fontWeight = FontWeight.Black)
             }
+        }
+
+        if (saveMessage != null) {
+            item {
+                Text(
+                    saveMessage,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = UnoChessColors.Lime,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Black,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatBox(label: String, value: String, modifier: Modifier = Modifier) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = UnoChessColors.SurfaceRaised)) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(value, fontWeight = FontWeight.Black)
+            Text(label, color = UnoChessColors.Muted, fontSize = 9.sp)
         }
     }
 }
@@ -188,11 +248,7 @@ private fun SectionTitle(text: String) {
 @Composable
 private fun SettingCard(content: @Composable ColumnScope.() -> Unit) {
     Card(colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface)) {
-        Column(
-            modifier = Modifier.padding(15.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            content = content,
-        )
+        Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
     }
 }
 

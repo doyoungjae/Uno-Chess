@@ -21,6 +21,11 @@ object AppRoute {
     const val PROFILE = "profile"
     const val FIRST_TURN = "first_turn"
     const val GAME = "game"
+    const val ONLINE_LOBBY = "online_lobby/{roomId}"
+    const val ONLINE_GAME = "online_game/{roomId}"
+
+    fun onlineLobby(roomId: String): String = "online_lobby/$roomId"
+    fun onlineGame(roomId: String): String = "online_game/$roomId"
 
     val bottomRoutes = setOf(HOME, LOCAL, ONLINE, PROFILE)
 }

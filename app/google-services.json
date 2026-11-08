@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "977685805247",
+    "project_id": "unochess-4ab64",
+    "storage_bucket": "unochess-4ab64.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:977685805247:android:2ef08c0e156d842827ae0a",
+        "android_client_info": {
+          "package_name": "com.example.unochessprototype"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKVTz_hYdml99AjwxcCBqKE7__1I2iWZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

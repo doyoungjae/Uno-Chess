@@ -71,7 +71,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
-import com.example.unochessprototype.data.LocalProfile
+import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.data.LocalSettings
 import com.example.unochessprototype.game.CardColor
 import com.example.unochessprototype.game.GameResult
@@ -99,7 +99,7 @@ private data class BoardMoveAnimation(
 @Composable
 fun ReleaseGameScreen(
     game: UnoChessGame,
-    profile: LocalProfile,
+    profile: OnlineProfile,
     opponentName: String,
     settings: LocalSettings,
     player1IsWhite: Boolean,
@@ -159,10 +159,7 @@ fun ReleaseGameScreen(
         if (result != null) onGameFinished(result)
     }
 
-    // Joker 열 선택 중에는 시스템 뒤로가기 역시 막는다.
-    BackHandler(enabled = pendingJokerCardId != null) {
-        // 반드시 열을 선택해야 게임으로 돌아갈 수 있다.
-    }
+    BackHandler(onBack = onExit)
 
     Box(
         modifier = Modifier

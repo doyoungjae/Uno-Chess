@@ -31,7 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.unochessprototype.data.LocalProfile
+import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.game.FirstTurnDecider
 import com.example.unochessprototype.game.LocalPlayerSlot
 
@@ -43,7 +43,7 @@ private val DrawBorder = Color(0xFF2D4A38)
 
 @Composable
 fun FirstTurnDrawScreen(
-    profile: LocalProfile,
+    profile: OnlineProfile,
     opponentName: String,
     onDecided: (player1IsWhite: Boolean) -> Unit,
     onBack: () -> Unit,
@@ -77,7 +77,7 @@ fun FirstTurnDrawScreen(
                     fontSize = 12.sp,
                 )
             }
-            OutlinedButton(onClick = onBack) { Text("대기실") }
+            OutlinedButton(onClick = onBack) { Text("홈으로") }
         }
 
         Card(

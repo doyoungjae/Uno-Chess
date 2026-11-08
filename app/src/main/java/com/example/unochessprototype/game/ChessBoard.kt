@@ -27,11 +27,60 @@ class ChessBoard private constructor(
         }
 
         fun empty(): ChessBoard = ChessBoard(Array(8) { arrayOfNulls<Piece>(8) })
+
+        fun fromCodes(codes: List<String>): ChessBoard {
+            require(codes.size == 64) { "Board encoding must contain exactly 64 cells." }
+            val cells = Array(8) { arrayOfNulls<Piece>(8) }
+            codes.forEachIndexed { index, code ->
+                if (code.isBlank()) return@forEachIndexed
+                require(code.length == 2) { "Invalid board code: $code" }
+                val player = when (code[0]) {
+                    'W' -> Player.WHITE
+                    'B' -> Player.BLACK
+                    else -> error("Invalid player code: $code")
+                }
+                val type = when (code[1]) {
+                    'K' -> PieceType.KING
+                    'Q' -> PieceType.QUEEN
+                    'R' -> PieceType.ROOK
+                    'B' -> PieceType.BISHOP
+                    'N' -> PieceType.KNIGHT
+                    'P' -> PieceType.PAWN
+                    else -> error("Invalid piece code: $code")
+                }
+                cells[index / 8][index % 8] = Piece(player, type)
+            }
+            return ChessBoard(cells)
+        }
     }
 
     fun pieceAt(square: Square): Piece? = cells[square.row][square.col]
 
     fun snapshot(): List<List<Piece?>> = cells.map { row -> row.toList() }
+
+    fun toCodes(): List<String> = buildList(64) {
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val piece = cells[row][col]
+                add(
+                    if (piece == null) {
+                        ""
+                    } else {
+                        val side = if (piece.player == Player.WHITE) 'W' else 'B'
+                        val kind = when (piece.type) {
+                            PieceType.KING -> 'K'
+                            PieceType.QUEEN -> 'Q'
+                            PieceType.ROOK -> 'R'
+                            PieceType.BISHOP -> 'B'
+                            PieceType.KNIGHT -> 'N'
+                            PieceType.PAWN -> 'P'
+                        }
+                        "$side$kind"
+                    }
+                )
+            }
+        }
+    }
 
     fun legalMovesFrom(from: Square): List<Move> {
         val piece = pieceAt(from) ?: return emptyList()
