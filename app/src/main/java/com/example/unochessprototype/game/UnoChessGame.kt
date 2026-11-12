@@ -9,6 +9,7 @@ class UnoChessGame(
         const val MAX_TURNS = 200
         const val HAND_SIZE = 5
         const val TOTAL_CARD_COUNT = 40
+        const val ENDGAME_PIECE_LIMIT = 4
     }
 
     var board: ChessBoard = ChessBoard.standard()
@@ -66,10 +67,17 @@ class UnoChessGame(
 
     fun allCardsSnapshot(): List<UnoCard> = allCards.toList()
 
+    // 종반전: 자기 기물이 4개 이하면 손패 전체가 JOKER로 취급된다.
+    fun isEndgame(player: Player = currentPlayer): Boolean =
+        board.pieceCount(player) <= ENDGAME_PIECE_LIMIT
+
+    fun actsAsJoker(card: UnoCard, player: Player = currentPlayer): Boolean =
+        card.isJoker || isEndgame(player)
+
     fun playableFiles(card: UnoCard, player: Player = currentPlayer): Set<Int> {
         if (result != null) return emptySet()
         val movable = board.movableFiles(player)
-        return if (card.isJoker) {
+        return if (actsAsJoker(card, player)) {
             movable
         } else {
             val file = card.number!! - 1
@@ -88,7 +96,7 @@ class UnoChessGame(
     fun legalMovesForCard(cardId: Int, chosenFileForJoker: Int? = null): List<Move> {
         val card = hand(currentPlayer).firstOrNull { it.id == cardId } ?: return emptyList()
         val files = playableFiles(card)
-        val file = if (card.isJoker) {
+        val file = if (actsAsJoker(card)) {
             chosenFileForJoker ?: return emptyList()
         } else {
             card.number!! - 1
@@ -118,7 +126,7 @@ class UnoChessGame(
             ?: error("Selected card is not in the current player's hand.")
 
         val allowedFiles = playableFiles(card, player)
-        val file = if (card.isJoker) {
+        val file = if (actsAsJoker(card, player)) {
             requireNotNull(chosenFileForJoker) { "Joker requires a file selection." }
         } else {
             card.number!! - 1
@@ -140,6 +148,9 @@ class UnoChessGame(
 
         if (outcome.capturedPiece != null) {
             log("${player.displayName()} · ${outcome.capturedPiece.player} ${outcome.capturedPiece.type} 포획")
+            if (board.pieceCount(player.opposite()) == ENDGAME_PIECE_LIMIT) {
+                log("종반전 · ${player.opposite().displayName()} 기물 ${ENDGAME_PIECE_LIMIT}개 이하 · 모든 손패 JOKER 취급")
+            }
         }
 
         if (outcome.promoted) {

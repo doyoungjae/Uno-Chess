@@ -56,6 +56,8 @@ class ChessBoard private constructor(
 
     fun pieceAt(square: Square): Piece? = cells[square.row][square.col]
 
+    fun pieceCount(player: Player): Int = cells.sumOf { row -> row.count { it?.player == player } }
+
     fun snapshot(): List<List<Piece?>> = cells.map { row -> row.toList() }
 
     fun toCodes(): List<String> = buildList(64) {
