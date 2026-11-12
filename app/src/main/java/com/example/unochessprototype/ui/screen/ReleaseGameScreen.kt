@@ -149,7 +149,7 @@ fun ReleaseGameScreen(
     val legalMoves = if (selectedCardId != null && activeFile != null && selectedFrom != null) {
         game.legalMovesForCard(
             cardId = selectedCardId!!,
-            chosenFileForJoker = if (selectedCard?.isJoker == true) activeFile else null,
+            chosenFileForJoker = if (selectedCard?.let(game::actsAsJoker) == true) activeFile else null,
         ).filter { it.from == selectedFrom }
     } else {
         emptyList()
@@ -191,6 +191,7 @@ fun ReleaseGameScreen(
                 canExchange = canExchange,
                 selectedCard = selectedCard,
                 activeFile = activeFile,
+                endgame = result == null && game.isEndgame(),
             )
 
             AnimatedChessBoard(
@@ -218,7 +219,7 @@ fun ReleaseGameScreen(
                         val play = game.playCardAndMove(
                             cardId = selectedCardId!!,
                             move = destination,
-                            chosenFileForJoker = if (selectedCard?.isJoker == true) activeFile else null,
+                            chosenFileForJoker = if (selectedCard?.let(game::actsAsJoker) == true) activeFile else null,
                         )
 
                         animationSerial += 1
@@ -281,7 +282,7 @@ fun ReleaseGameScreen(
                         selectedCardId = card.id
                         focusedCardId = card.id
                         selectedFrom = null
-                        if (card.isJoker) {
+                        if (game.actsAsJoker(card)) {
                             activeFile = null
                             pendingJokerCardId = card.id
                         } else {
@@ -415,18 +416,20 @@ private fun GameGuide(
     canExchange: Boolean,
     selectedCard: UnoCard?,
     activeFile: Int?,
+    endgame: Boolean,
 ) {
-    val text = when (result) {
+    val baseText = when (result) {
         is GameResult.Win -> "KING 포획 · 게임 종료"
         is GameResult.Draw -> "무승부 · ${result.reason}"
         null -> when {
             canExchange -> "이동 가능한 카드가 없습니다 · 교환할 카드 2장을 위로 뽑으세요"
             selectedCard == null -> "카드를 터치한 뒤 위로 뽑아 선택하세요 · 1~8은 A~H 열"
-            selectedCard.isJoker && activeFile == null -> "JOKER · 열을 선택해야 계속할 수 있습니다"
+            activeFile == null -> "JOKER · 열을 선택해야 계속할 수 있습니다"
             activeFile != null -> "${('A'.code + activeFile).toChar()}열 활성화 · 움직일 기물을 선택하세요"
             else -> "카드를 선택하세요"
         }
     }
+    val text = if (endgame) "종반전 · 기물 4개 이하 · 모든 카드 JOKER\n$baseText" else baseText
 
     Surface(color = UnoChessColors.SurfaceRaised, shape = RoundedCornerShape(10.dp)) {
         Text(
