@@ -1,7 +1,10 @@
 package com.example.unochessprototype.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,7 +29,9 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unochessprototype.data.LocalPreferences
 import com.example.unochessprototype.ui.navigation.AppRoute
 import com.example.unochessprototype.ui.navigation.MainBottomBar
+import com.example.unochessprototype.ui.screen.CustomizeScreen
 import com.example.unochessprototype.ui.screen.HomeTabScreen
+import com.example.unochessprototype.ui.screen.SplashScreen
 import com.example.unochessprototype.ui.screen.LocalGameTabScreen
 import com.example.unochessprototype.ui.screen.OnlineGameScreen
 import com.example.unochessprototype.ui.screen.OnlineLobbyScreen
@@ -37,6 +43,7 @@ import com.example.unochessprototype.viewmodel.GameViewModel
 import com.example.unochessprototype.viewmodel.LocalGameSessionViewModel
 import com.example.unochessprototype.viewmodel.OnlineBattleViewModel
 import com.example.unochessprototype.viewmodel.UserProfileViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun UnoChessApp() {
@@ -88,6 +95,14 @@ fun UnoChessApp() {
         navigateToRoot(AppRoute.HOME)
     }
 
+    // 앱을 처음 켤 때만 스플래시를 보여준다(화면 회전 시 다시 뜨지 않음). 그동안 뒤에서 Firebase 연결이 진행된다.
+    var showSplash by rememberSaveable { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        delay(1700)
+        showSplash = false
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = UnoChessColors.Background,
@@ -110,9 +125,20 @@ fun UnoChessApp() {
                 HomeTabScreen(
                     profile = profile,
                     profileConnected = profileState.isConnected,
-                    onLocalGame = { navigateToRoot(AppRoute.LOCAL) },
-                    onOnlineGame = { navigateToRoot(AppRoute.ONLINE) },
+                    settings = settings,
+                    onCustomize = { navController.navigate(AppRoute.CUSTOMIZE) { launchSingleTop = true } },
                     onProfile = { navigateToRoot(AppRoute.PROFILE) },
+                )
+            }
+
+            composable(AppRoute.CUSTOMIZE) {
+                CustomizeScreen(
+                    settings = settings,
+                    onSettingsChange = { updated ->
+                        settings = updated
+                        preferences.saveSettings(updated)
+                    },
+                    onBack = { navController.popBackStack() },
                 )
             }
 
@@ -124,7 +150,7 @@ fun UnoChessApp() {
                     player2Ready = localSession.player2Ready,
                     onOpponentNameChange = localSession::setOpponentName,
                     onReadyChange = localSession::setPlayer2Ready,
-                    onStart = { navController.navigate(AppRoute.FIRST_TURN) },
+                    onStart = { navController.navigate(AppRoute.GAME) },
                 )
             }
 
@@ -137,6 +163,7 @@ fun UnoChessApp() {
                     busy = onlineState.busy,
                     errorMessage = onlineState.errorMessage,
                     onBackToHome = { navigateToRoot(AppRoute.HOME) },
+                    onToggleFriend = profileViewModel::toggleFriend,
                     onCreateRoom = { roomName ->
                         onlineBattle.createRoom(profile, roomName) { roomId ->
                             navController.navigate(AppRoute.onlineLobby(roomId))
@@ -167,27 +194,6 @@ fun UnoChessApp() {
                 )
             }
 
-            composable(AppRoute.FIRST_TURN) {
-                BackHandler(onBack = ::goHomeClearingLocalMatch)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(UnoChessColors.Background)
-                        .statusBarsPadding()
-                        .navigationBarsPadding(),
-                ) {
-                    FirstTurnDrawScreen(
-                        profile = profile,
-                        opponentName = localSession.opponentName,
-                        onDecided = { player1IsWhite ->
-                            localSession.setFirstPlayer(player1IsWhite)
-                            navController.navigate(AppRoute.GAME)
-                        },
-                        onBack = ::goHomeClearingLocalMatch,
-                    )
-                }
-            }
-
             composable(AppRoute.GAME) {
                 val gameViewModel: GameViewModel = viewModel()
                 ReleaseGameScreen(
@@ -195,11 +201,10 @@ fun UnoChessApp() {
                     profile = profile,
                     opponentName = localSession.opponentName,
                     settings = settings,
-                    player1IsWhite = localSession.player1IsWhite,
                     onExit = ::goHomeClearingLocalMatch,
                     onRematch = {
                         navController.popBackStack(AppRoute.LOCAL, false)
-                        navController.navigate(AppRoute.FIRST_TURN)
+                        navController.navigate(AppRoute.GAME)
                     },
                     onGameFinished = { gameViewModel.markResultRecorded() },
                 )
@@ -266,5 +271,9 @@ fun UnoChessApp() {
                 )
             }
         }
+    }
+    AnimatedVisibility(visible = showSplash, enter = EnterTransition.None, exit = fadeOut(tween(450))) {
+        SplashScreen()
+    }
     }
 }

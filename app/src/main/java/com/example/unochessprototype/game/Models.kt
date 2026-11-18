@@ -82,14 +82,13 @@ data class UnoCard(
 }
 
 sealed class GameResult {
-    data class Win(val winner: Player) : GameResult()
+    data class Win(val winner: Player, val reason: String = "상대 KING을 직접 포획했습니다.") : GameResult()
     data class Draw(val reason: String) : GameResult()
 }
 
 data class PlayResult(
     val moveOutcome: MoveOutcome,
     val usedCard: UnoCard,
-    val replacementCard: UnoCard?,
     val gameResult: GameResult?,
 )
 
