@@ -13,6 +13,47 @@
       "$roomId": {
         ".write": "auth != null && ((!data.exists() && newData.child('ownerUid').val() == auth.uid) || (data.exists() && data.child('ownerUid').val() == auth.uid) || (data.exists() && data.child('guestUid').val() == auth.uid) || (data.exists() && data.child('guestUid').val() == '' && newData.child('guestUid').val() == auth.uid))"
       }
+    },
+    "friendships": {
+      ".indexOn": [
+        "sender",
+        "receiver"
+      ],
+      ".read": "auth != null && ((query.orderByChild == 'sender' && query.equalTo == auth.uid) || (query.orderByChild == 'receiver' && query.equalTo == auth.uid))",
+      "$pair": {
+        ".read": "auth != null && (data.child('sender').val() == auth.uid || data.child('receiver').val() == auth.uid)",
+        ".write": "auth != null && ((!data.exists() && !root.child('friendships').child(newData.child('receiver').val() + ':' + auth.uid).exists() && newData.child('sender').val() == auth.uid && $pair == auth.uid + ':' + newData.child('receiver').val() && newData.child('receiver').val() != auth.uid && root.child('users').child(newData.child('receiver').val()).exists() && newData.child('status').val() == 'pending') || (data.exists() && auth.uid == data.child('receiver').val() && data.child('status').val() == 'pending' && (!newData.exists() || (newData.child('sender').val() == data.child('sender').val() && newData.child('receiver').val() == data.child('receiver').val() && newData.child('status').val() == 'accepted'))))",
+        ".validate": "newData.hasChildren(['sender', 'receiver', 'status'])",
+        "sender": {
+          ".validate": "newData.isString()"
+        },
+        "receiver": {
+          ".validate": "newData.isString()"
+        },
+        "status": {
+          ".validate": "newData.val() == 'pending' || newData.val() == 'accepted'"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "socialPresence": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid == $uid || root.child('friendships').child(auth.uid + ':' + $uid).child('status').val() == 'accepted' || root.child('friendships').child($uid + ':' + auth.uid).child('status').val() == 'accepted')",
+        ".write": "auth != null && auth.uid == $uid",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "sessions": {
+          "$session": {
+            ".validate": "newData.isBoolean()"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }

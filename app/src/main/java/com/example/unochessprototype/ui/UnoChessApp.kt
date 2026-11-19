@@ -57,6 +57,10 @@ fun UnoChessApp() {
     val profileState = profileViewModel.uiState
     val profile = profileState.profile
 
+    val friends: com.example.unochessprototype.viewmodel.FriendsViewModel = viewModel()
+    LaunchedEffect(profile.uid, profile.nickname) {
+        if (profile.uid.isNotBlank()) { friends.connect(profile.uid); friends.name(profile.nickname) }
+    }
     val localSession: LocalGameSessionViewModel = viewModel()
     val onlineBattle: OnlineBattleViewModel = viewModel()
     val onlineState = onlineBattle.uiState
@@ -163,7 +167,7 @@ fun UnoChessApp() {
                     busy = onlineState.busy,
                     errorMessage = onlineState.errorMessage,
                     onBackToHome = { navigateToRoot(AppRoute.HOME) },
-                    onToggleFriend = profileViewModel::toggleFriend,
+                    friends = friends,
                     onCreateRoom = { roomName ->
                         onlineBattle.createRoom(profile, roomName) { roomId ->
                             navController.navigate(AppRoute.onlineLobby(roomId))
