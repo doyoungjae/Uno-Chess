@@ -1,5 +1,6 @@
 package com.example.unochessprototype.ui.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.Public
+import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.SportsEsports
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,22 +28,27 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.unochessprototype.data.LocalSettings
 import com.example.unochessprototype.online.model.OnlineProfile
+import com.example.unochessprototype.ui.theme.boardPalette
+import com.example.unochessprototype.ui.theme.rememberLocalImage
 import com.example.unochessprototype.ui.theme.UnoChessColors
 
 @Composable
 fun HomeTabScreen(
     profile: OnlineProfile,
     profileConnected: Boolean,
-    onLocalGame: () -> Unit,
-    onOnlineGame: () -> Unit,
+    settings: LocalSettings,
+    onCustomize: () -> Unit,
     onProfile: () -> Unit,
 ) {
     LazyColumn(
@@ -94,7 +100,16 @@ fun HomeTabScreen(
             }
         }
 
-        item { HeroBoardCard() }
+        item { HeroBoardCard(settings) }
+
+        item {
+            GameModeCard(
+                title = "보드 & 카드 커스텀",
+                subtitle = "보드판 · 카드 뒷면 테마와 내 사진 설정",
+                icon = Icons.Rounded.Palette,
+                onClick = onCustomize,
+            )
+        }
 
         item {
             Text("온라인 전적", fontWeight = FontWeight.Black, fontSize = 17.sp)
@@ -122,33 +137,11 @@ fun HomeTabScreen(
                 fontSize = 10.sp,
             )
         }
-
-        item {
-            Text("게임 모드", fontWeight = FontWeight.Black, fontSize = 17.sp)
-        }
-
-        item {
-            GameModeCard(
-                title = "로컬 게임",
-                subtitle = "한 기기에서 2명이 번갈아 플레이 · 전적 미반영",
-                iconOnline = false,
-                onClick = onLocalGame,
-            )
-        }
-
-        item {
-            GameModeCard(
-                title = "온라인 게임",
-                subtitle = "Firebase 온라인 로비로 이동",
-                iconOnline = true,
-                onClick = onOnlineGame,
-            )
-        }
     }
 }
 
 @Composable
-private fun HeroBoardCard() {
+private fun HeroBoardCard(settings: LocalSettings) {
     Card(
         colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface),
         shape = RoundedCornerShape(26.dp),
@@ -171,25 +164,23 @@ private fun HeroBoardCard() {
                     Text("UNO CHESS READY", color = UnoChessColors.Lime, fontSize = 11.sp, fontWeight = FontWeight.Black)
                 }
             }
-            MiniBoard()
-            Text(
-                "1~8 카드는 A~H 열을 활성화하고, JOKER는 움직일 수 있는 열을 자유롭게 선택합니다.",
-                color = UnoChessColors.Muted,
-                fontSize = 12.sp,
-                textAlign = TextAlign.Center,
-            )
+            MiniBoard(settings)
         }
     }
 }
 
 @Composable
-private fun MiniBoard() {
-    Column(
+internal fun MiniBoard(settings: LocalSettings) {
+    val palette = boardPalette(settings.boardTheme)
+    val boardImage = rememberLocalImage(settings.boardImagePath)
+    Box(
         modifier = Modifier
             .fillMaxWidth(0.72f)
-            .background(Color(0xFF26382D), RoundedCornerShape(12.dp))
+            .background(palette.border, RoundedCornerShape(12.dp))
             .padding(5.dp),
     ) {
+    boardImage?.let { Image(it, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop) }
+    Column(modifier = Modifier.fillMaxWidth()) {
         repeat(8) { row ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 repeat(8) { col ->
@@ -204,7 +195,10 @@ private fun MiniBoard() {
                         modifier = Modifier
                             .weight(1f)
                             .height(29.dp)
-                            .background(if ((row + col) % 2 == 0) Color(0xFFC7D9A7) else Color(0xFF41634A)),
+                            .background(
+                                (if ((row + col) % 2 == 0) palette.light else palette.dark)
+                                    .let { if (boardImage != null) it.copy(alpha = 0.45f) else it }
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(piece, fontSize = 18.sp, color = if (row < 2) Color(0xFF17201A) else Color(0xFFF7F2E7))
@@ -212,6 +206,7 @@ private fun MiniBoard() {
                 }
             }
         }
+    }
     }
 }
 
@@ -232,7 +227,7 @@ private fun StatChip(label: String, value: String, modifier: Modifier = Modifier
 private fun GameModeCard(
     title: String,
     subtitle: String,
-    iconOnline: Boolean,
+    icon: ImageVector,
     onClick: () -> Unit,
 ) {
     Card(
@@ -252,7 +247,7 @@ private fun GameModeCard(
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    if (iconOnline) Icons.Rounded.Public else Icons.Rounded.SportsEsports,
+                    icon,
                     contentDescription = null,
                     tint = UnoChessColors.Lime,
                 )

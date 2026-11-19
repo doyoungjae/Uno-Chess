@@ -64,6 +64,9 @@ import com.example.unochessprototype.online.model.OnlineRoom
 import com.example.unochessprototype.online.rules.OnlineGameRules
 import com.example.unochessprototype.ui.theme.UnoChessColors
 import com.example.unochessprototype.ui.theme.boardPalette
+import com.example.unochessprototype.ui.theme.rememberLocalImage
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
 
 @Composable
 fun OnlineGameScreen(
@@ -387,19 +390,23 @@ private fun OnlineBoard(
     onSquareClick: (Square) -> Unit,
 ) {
     val palette = boardPalette(settings.boardTheme)
-    Column(
+    val boardImage = rememberLocalImage(settings.boardImagePath)
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(palette.border, RoundedCornerShape(8.dp))
             .padding(4.dp),
     ) {
+    boardImage?.let { Image(it, contentDescription = null, modifier = Modifier.matchParentSize(), contentScale = ContentScale.Crop) }
+    Column(modifier = Modifier.fillMaxWidth()) {
         repeat(8) { row ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 repeat(8) { col ->
                     val square = Square(row, col)
                     val piece = board.pieceAt(square)
                     val destination = legalMoves.firstOrNull { it.to == square }
-                    val base = if ((row + col) % 2 == 0) palette.light else palette.dark
+                    val base = (if ((row + col) % 2 == 0) palette.light else palette.dark)
+                        .let { if (boardImage != null) it.copy(alpha = 0.45f) else it }
                     val bg = when {
                         activeFile == col -> UnoChessColors.Lime.copy(alpha = 0.28f).compositeOver(base)
                         else -> base
@@ -452,6 +459,7 @@ private fun OnlineBoard(
             }
         }
     }
+}
 }
 
 @Composable

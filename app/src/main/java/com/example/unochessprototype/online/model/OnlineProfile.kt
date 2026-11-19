@@ -12,6 +12,8 @@ data class OnlineProfile(
     val onlineWins: Int = 0,
     val onlineLosses: Int = 0,
     val onlineDraws: Int = 0,
+    /** users/{uid}/friends/{friendUid} = true */
+    val friends: Map<String, Boolean> = emptyMap(),
 ) {
     @get:Exclude
     val winRate: Int

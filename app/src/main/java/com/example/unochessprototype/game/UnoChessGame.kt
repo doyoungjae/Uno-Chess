@@ -21,6 +21,7 @@ class UnoChessGame(
         Player.BLACK to mutableListOf(),
     )
     private var drawPile: MutableList<UnoCard> = mutableListOf()
+    private val discardPile: MutableList<UnoCard> = mutableListOf()
 
     var currentPlayer: Player = Player.WHITE
         private set
@@ -35,6 +36,14 @@ class UnoChessGame(
     val logs: List<String>
         get() = _logs.toList()
 
+    // init { reset() } 보다 먼저 선언해야 한다. 뒤에 두면 초기값(emptyList)이 reset() 결과를 덮어쓴다.
+    /** 선공 뽑기 기록. 마지막 판이 승부가 난 판이며, 이긴 쪽(PLAYER1/2)이 WHITE·선공이 된다. */
+    var firstTurnRounds: List<FirstTurnRound> = emptyList()
+        private set
+
+    val player1Starts: Boolean
+        get() = firstTurnRounds.lastOrNull()?.winner == LocalPlayerSlot.PLAYER1
+
     init {
         reset()
     }
@@ -46,24 +55,53 @@ class UnoChessGame(
         result = null
         _logs.clear()
 
-        val shuffled = allCards.shuffled(random)
+        val deck = allCards.shuffled(random).toMutableList()
+        discardPile.clear()
+        firstTurnRounds = decideFirstTurn(deck)
+
         hands.getValue(Player.WHITE).apply {
             clear()
-            addAll(shuffled.take(HAND_SIZE))
+            addAll(deck.take(HAND_SIZE))
         }
         hands.getValue(Player.BLACK).apply {
             clear()
-            addAll(shuffled.drop(HAND_SIZE).take(HAND_SIZE))
+            addAll(deck.drop(HAND_SIZE).take(HAND_SIZE))
         }
-        drawPile = shuffled.drop(HAND_SIZE * 2).toMutableList()
+        drawPile = deck.drop(HAND_SIZE * 2).toMutableList()
 
         log("게임 시작 · 각 플레이어 손패 5장 · 드로우 덱 ${drawPile.size}장")
         evaluateStartOfTurn()
     }
 
+    // 덱 맨 위에서 1장씩 뽑아 비교. 동점이면 두 장을 덱에 섞어 다시 뽑고,
+    // 승부가 나면 진 카드는 첫 버림 카드가 되고 이긴 카드는 덱에 섞는다.
+    private fun decideFirstTurn(deck: MutableList<UnoCard>): List<FirstTurnRound> {
+        val rounds = mutableListOf<FirstTurnRound>()
+        while (true) {
+            val round = FirstTurnRound(deck.removeAt(deck.lastIndex), deck.removeAt(deck.lastIndex))
+            rounds += round
+            log("선공 뽑기 · PLAYER 1 ${round.player1Card.displayName()} vs PLAYER 2 ${round.player2Card.displayName()}")
+            val winnerCard = round.winnerCard
+            val loserCard = round.loserCard
+            if (winnerCard == null || loserCard == null) {
+                deck += listOf(round.player1Card, round.player2Card)
+                deck.shuffle(random)
+                log("선공 뽑기 · 동점 · 다시 뽑기")
+                continue
+            }
+            discardPile += loserCard
+            deck += winnerCard
+            deck.shuffle(random)
+            log("선공 결정 · ${round.winner} 선공(WHITE) · ${loserCard.displayName()} 첫 버림 카드")
+            return rounds
+        }
+    }
+
     fun hand(player: Player = currentPlayer): List<UnoCard> = hands.getValue(player).toList()
 
     fun drawPileCount(): Int = drawPile.size
+
+    fun topDiscard(): UnoCard? = discardPile.lastOrNull()
 
     fun allCardsSnapshot(): List<UnoCard> = allCards.toList()
 
@@ -74,8 +112,18 @@ class UnoChessGame(
     fun actsAsJoker(card: UnoCard, player: Player = currentPlayer): Boolean =
         card.isJoker || isEndgame(player)
 
+    /**
+     * UNO 매칭: 버림 덱 맨 위 카드와 색 또는 숫자가 같아야 낼 수 있다.
+     * JOKER(종반전 포함)는 언제나 낼 수 있고, 맨 위가 JOKER면 다음 카드는 아무거나 낼 수 있다.
+     */
+    fun matchesTopDiscard(card: UnoCard, player: Player = currentPlayer): Boolean {
+        val top = topDiscard() ?: return true
+        if (actsAsJoker(card, player) || top.isJoker) return true
+        return card.color == top.color || card.number == top.number
+    }
+
     fun playableFiles(card: UnoCard, player: Player = currentPlayer): Set<Int> {
-        if (result != null) return emptySet()
+        if (result != null || !matchesTopDiscard(card, player)) return emptySet()
         val movable = board.movableFiles(player)
         return if (actsAsJoker(card, player)) {
             movable
@@ -157,24 +205,20 @@ class UnoChessGame(
             log("${player.displayName()} · PAWN ${move.to.algebraic()} 도달 → QUEEN 자동 승급")
         }
 
+        playerHand.removeAll { it.id == card.id }
+        discardPile += card
+
         if (outcome.capturedPiece?.type == PieceType.KING) {
-            playerHand.removeAll { it.id == card.id }
             result = GameResult.Win(player)
             log("게임 종료 · ${player.displayName()} 승리 · KING 직접 포획")
-            return PlayResult(outcome, card, null, result)
+            return PlayResult(outcome, card, result)
         }
 
-        ensureDrawCapacity(1)
-        val replacement = drawPile.removeAt(drawPile.lastIndex)
-        playerHand += replacement
-        playerHand.removeAll { it.id == card.id }
-
         check(playerHand.size == HAND_SIZE) { "Hand-size invariant broken after normal turn." }
-        log("${player.displayName()} · ${replacement.displayName()} 1장 보충 · 손패 5장 유지")
 
         finishTurn()
 
-        return PlayResult(outcome, card, replacement, result)
+        return PlayResult(outcome, card, result)
     }
 
     fun exchangeTwoCards(cardIds: Set<Int>): ExchangeResult {
@@ -189,23 +233,17 @@ class UnoChessGame(
                 ?: error("Selected exchange card is not in the current player's hand.")
         }
 
-        ensureDrawCapacity(2)
-        val drawn = listOf(
-            drawPile.removeAt(drawPile.lastIndex),
-            drawPile.removeAt(drawPile.lastIndex),
-        )
-
-        playerHand += drawn
         val discardedIds = discarded.map { it.id }.toSet()
         playerHand.removeAll { it.id in discardedIds }
-
-        check(playerHand.size == HAND_SIZE) { "Hand-size invariant broken after two-card exchange." }
-
+        discardPile += discarded
         log(
-            "${player.displayName()} · 이동 가능한 카드 없음 · " +
-                "${discarded.joinToString { it.displayName() }} 2장 교환"
+            "${player.displayName()} · 사용 가능한 카드 없음 · " +
+                "${discarded.joinToString { it.displayName() }} 2장 버림"
         )
-        log("${player.displayName()} · ${drawn.joinToString { it.displayName() }} 2장 드로우 · 손패 5장 유지")
+
+        val drawn = listOf(drawCard(player))
+        check(playerHand.size == HAND_SIZE) { "Hand-size invariant broken after two-card exchange." }
+        log("${player.displayName()} · ${drawn.single().displayName()} 1장 드로우 · 손패 5장 유지")
 
         finishTurn()
 
@@ -226,8 +264,18 @@ class UnoChessGame(
         evaluateStartOfTurn()
     }
 
+    fun timeOut(player: Player) {
+        if (result != null) return
+        result = GameResult.Win(player.opposite(), "상대의 시간이 모두 소진되었습니다.")
+        log("게임 종료 · ${player.displayName()} 시간 초과 · ${player.opposite().displayName()} 승리")
+    }
+
     private fun evaluateStartOfTurn() {
         if (result != null) return
+
+        // 턴 시작 드로우: 5장 -> 6장
+        val drawn = drawCard(currentPlayer)
+        log("${currentPlayer.displayName()} · ${drawn.displayName()} 1장 드로우 · 손패 ${HAND_SIZE + 1}장")
 
         if (!board.hasAnyLegalMove(currentPlayer)) {
             result = GameResult.Draw("${currentPlayer.displayName()}에게 이동 가능한 체스 기물이 없습니다.")
@@ -235,23 +283,25 @@ class UnoChessGame(
         }
     }
 
-    private fun ensureDrawCapacity(required: Int) {
-        if (drawPile.size >= required) return
-        rebuildThirtyCardPool()
-        check(drawPile.size >= required) { "Not enough cards after rebuilding the draw pile." }
+    private fun drawCard(player: Player): UnoCard {
+        if (drawPile.isEmpty()) rebuildDrawPile()
+        val card = drawPile.removeAt(drawPile.lastIndex)
+        hands.getValue(player) += card
+        return card
     }
 
-    private fun rebuildThirtyCardPool() {
-        val handIds = hands.values.flatten().map { it.id }.toSet()
-        check(handIds.size == HAND_SIZE * 2) { "Deck rebuild requires exactly 10 unique cards in hands." }
-
+    private fun rebuildDrawPile() {
+        // 맨 위 버림 카드는 매칭 기준이라 남겨 두고 나머지만 섞는다.
+        val top = topDiscard()
+        val keepIds = hands.values.flatten().map { it.id }.toSet() + listOfNotNull(top?.id)
         drawPile = allCards
-            .filterNot { it.id in handIds }
+            .filterNot { it.id in keepIds }
             .shuffled(random)
             .toMutableList()
-
-        check(drawPile.size == 30) { "Rebuilt deck must contain exactly 30 cards." }
-        log("덱 재구성 · 양쪽 손패 10장 제외 · 나머지 30장 셔플")
+        discardPile.clear()
+        top?.let { discardPile += it }
+        check(drawPile.isNotEmpty()) { "No cards left to rebuild the draw pile." }
+        log("덱 재구성 · 손패를 제외한 ${drawPile.size}장 셔플")
     }
 
     private fun log(message: String) {
@@ -279,10 +329,15 @@ class UnoChessGame(
     internal fun boardForTest(): ChessBoard = board
 
     internal fun forceHandsForTest(white: List<UnoCard>, black: List<UnoCard>) {
-        require(white.size == HAND_SIZE && black.size == HAND_SIZE)
         hands.getValue(Player.WHITE).apply { clear(); addAll(white) }
         hands.getValue(Player.BLACK).apply { clear(); addAll(black) }
         val handIds = (white + black).map { it.id }.toSet()
         drawPile = allCards.filterNot { it.id in handIds }.shuffled(random).toMutableList()
+        discardPile.clear()
+    }
+
+    internal fun setTopDiscardForTest(card: UnoCard) {
+        drawPile.removeAll { it.id == card.id }
+        discardPile += card
     }
 }

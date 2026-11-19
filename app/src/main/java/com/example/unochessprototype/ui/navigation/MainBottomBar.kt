@@ -19,8 +19,8 @@ object AppRoute {
     const val LOCAL = "local"
     const val ONLINE = "online"
     const val PROFILE = "profile"
-    const val FIRST_TURN = "first_turn"
     const val GAME = "game"
+    const val CUSTOMIZE = "customize"
     const val ONLINE_LOBBY = "online_lobby/{roomId}"
     const val ONLINE_GAME = "online_game/{roomId}"
 

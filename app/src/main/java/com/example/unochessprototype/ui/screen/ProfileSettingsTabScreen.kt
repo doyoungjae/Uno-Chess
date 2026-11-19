@@ -29,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -41,7 +40,6 @@ import androidx.compose.ui.unit.sp
 import com.example.unochessprototype.data.LocalSettings
 import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.ui.theme.UnoChessColors
-import com.example.unochessprototype.ui.theme.boardPalette
 
 @Composable
 fun ProfileSettingsTabScreen(
@@ -62,7 +60,6 @@ fun ProfileSettingsTabScreen(
     var effectsVolume by rememberSaveable(settings.effectsVolume) { mutableFloatStateOf(settings.effectsVolume) }
     var moveHints by rememberSaveable(settings.moveHints) { mutableStateOf(settings.moveHints) }
     var showCoordinates by rememberSaveable(settings.showCoordinates) { mutableStateOf(settings.showCoordinates) }
-    var boardTheme by rememberSaveable(settings.boardTheme) { mutableIntStateOf(settings.boardTheme) }
 
     LaunchedEffect(profile.uid, profile.nickname, profile.avatar) {
         if (profile.uid.isNotBlank()) {
@@ -170,17 +167,6 @@ fun ProfileSettingsTabScreen(
             }
         }
 
-        item { SectionTitle("체스 보드 테마") }
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(3) { index ->
-                    ThemeChoice(index, selected = boardTheme == index, modifier = Modifier.weight(1f)) {
-                        boardTheme = index
-                    }
-                }
-            }
-        }
-
         item { SectionTitle("게임 표시") }
         item {
             SettingCard {
@@ -201,7 +187,6 @@ fun ProfileSettingsTabScreen(
                             effectsVolume = effectsVolume,
                             moveHints = moveHints,
                             showCoordinates = showCoordinates,
-                            boardTheme = boardTheme,
                         )
                     )
                 },
@@ -268,41 +253,3 @@ private fun ToggleRow(
     }
 }
 
-@Composable
-private fun ThemeChoice(
-    themeIndex: Int,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit,
-) {
-    val palette = boardPalette(themeIndex)
-    Card(
-        modifier = modifier
-            .then(if (selected) Modifier.border(2.dp, UnoChessColors.Lime, RoundedCornerShape(16.dp)) else Modifier)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                repeat(4) { r ->
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        repeat(4) { c ->
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(16.dp)
-                                    .background(if ((r + c) % 2 == 0) palette.light else palette.dark)
-                            )
-                        }
-                    }
-                }
-            }
-            Text(palette.label, fontSize = 10.sp, fontWeight = if (selected) FontWeight.Black else FontWeight.Medium)
-        }
-    }
-}

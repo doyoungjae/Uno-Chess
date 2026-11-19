@@ -67,6 +67,17 @@ class UserProfileViewModel : ViewModel() {
         )
     }
 
+    fun toggleFriend(friendUid: String) {
+        val uid = observedUid ?: return
+        if (friendUid.isBlank() || friendUid == uid) return
+        repository.setFriend(
+            uid = uid,
+            friendUid = friendUid,
+            isFriend = friendUid !in uiState.profile.friends,
+            onError = { message -> uiState = uiState.copy(errorMessage = message) },
+        )
+    }
+
     fun clearTransientMessage() {
         uiState = uiState.copy(saveMessage = null)
     }

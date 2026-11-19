@@ -101,6 +101,19 @@ class OnlineUserRepository(
             }
     }
 
+    fun setFriend(
+        uid: String,
+        friendUid: String,
+        isFriend: Boolean,
+        onError: (String) -> Unit,
+    ) {
+        usersRef.child(uid).child("friends").child(friendUid)
+            .setValue(if (isFriend) true else null)
+            .addOnFailureListener { error ->
+                onError(error.localizedMessage ?: "친구 목록 저장에 실패했습니다.")
+            }
+    }
+
     private fun createInitialProfile(uid: String, onError: (String) -> Unit) {
         val profile = OnlineProfile(
             uid = uid,

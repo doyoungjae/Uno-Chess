@@ -20,6 +20,11 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.StarBorder
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,7 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,12 +59,16 @@ fun OnlineTabScreen(
     busy: Boolean,
     errorMessage: String?,
     onBackToHome: () -> Unit,
+    onToggleFriend: (String) -> Unit,
     onCreateRoom: (String) -> Unit,
     onJoinRoom: (String) -> Unit,
 ) {
     BackHandler(onBack = onBackToHome)
     var showCreateDialog by remember { mutableStateOf(false) }
     var roomName by remember(profile.nickname) { mutableStateOf("${profile.nickname}의 방") }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val friendRooms = rooms.filter { it.ownerUid != profile.uid && it.ownerUid in profile.friends }
+    val shownRooms = if (selectedTab == 0) rooms else friendRooms
 
     LazyColumn(
         modifier = Modifier
@@ -121,6 +132,17 @@ fun OnlineTabScreen(
             }
         }
 
+        item {
+            TabRow(
+                selectedTabIndex = selectedTab,
+                containerColor = UnoChessColors.Surface,
+                contentColor = UnoChessColors.Lime,
+            ) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text("전체 ${rooms.size}") })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text("친구 ${friendRooms.size}") })
+            }
+        }
+
         when {
             loadingRooms -> item {
                 Box(modifier = Modifier.fillMaxWidth().padding(28.dp), contentAlignment = Alignment.Center) {
@@ -128,25 +150,33 @@ fun OnlineTabScreen(
                 }
             }
 
-            rooms.isEmpty() -> item {
+            shownRooms.isEmpty() -> item {
                 Card(colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface)) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(22.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        Text("입장 가능한 방이 없습니다.", fontWeight = FontWeight.Bold)
-                        Text("새 방을 만들면 다른 사용자의 목록에 실시간으로 표시됩니다.", color = UnoChessColors.Muted, fontSize = 11.sp)
+                        if (selectedTab == 0) {
+                            Text("입장 가능한 방이 없습니다.", fontWeight = FontWeight.Bold)
+                            Text("새 방을 만들면 다른 사용자의 목록에 실시간으로 표시됩니다.", color = UnoChessColors.Muted, fontSize = 11.sp)
+                        } else {
+                            Text("친구가 만든 방이 없습니다.", fontWeight = FontWeight.Bold)
+                            Text("전체 탭에서 방장 옆 ☆를 눌러 친구로 추가할 수 있습니다.", color = UnoChessColors.Muted, fontSize = 11.sp)
+                        }
                     }
                 }
             }
 
-            else -> items(rooms, key = { it.roomId }) { room ->
+            else -> items(shownRooms, key = { it.roomId }) { room ->
                 OnlineRoomCard(
                     room = room,
                     isMyRoom = room.isParticipant(profile.uid),
+                    isFriendOwner = room.ownerUid in profile.friends,
+                    canBefriend = connected && room.ownerUid.isNotBlank() && room.ownerUid != profile.uid,
                     enabled = connected && !busy,
                     onJoin = { onJoinRoom(room.roomId) },
+                    onToggleFriend = { onToggleFriend(room.ownerUid) },
                 )
             }
         }
@@ -192,8 +222,11 @@ fun OnlineTabScreen(
 private fun OnlineRoomCard(
     room: OnlineRoom,
     isMyRoom: Boolean,
+    isFriendOwner: Boolean,
+    canBefriend: Boolean,
     enabled: Boolean,
     onJoin: () -> Unit,
+    onToggleFriend: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -216,6 +249,15 @@ private fun OnlineRoomCard(
                 Text("${if (room.guestUid.isBlank()) 1 else 2} / 2 · ${room.status}", color = UnoChessColors.Lime, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
 
+            if (canBefriend) {
+                IconButton(onClick = onToggleFriend) {
+                    Icon(
+                        if (isFriendOwner) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                        contentDescription = if (isFriendOwner) "친구 해제" else "방장 친구 추가",
+                        tint = if (isFriendOwner) UnoChessColors.Lime else UnoChessColors.Muted,
+                    )
+                }
+            }
             Button(enabled = enabled, onClick = onJoin) {
                 Text(if (isMyRoom) "다시 입장" else "입장")
             }

@@ -18,18 +18,11 @@ class LocalGameSessionViewModel(
         savedStateHandle[KEY_READY] ?: false
     )
 
-    private var player1IsWhiteState by mutableStateOf(
-        savedStateHandle[KEY_PLAYER1_WHITE] ?: true
-    )
-
     val opponentName: String
         get() = opponentNameState
 
     val player2Ready: Boolean
         get() = player2ReadyState
-
-    val player1IsWhite: Boolean
-        get() = player1IsWhiteState
 
     fun setOpponentName(value: String) {
         opponentNameState = value.take(16)
@@ -41,11 +34,6 @@ class LocalGameSessionViewModel(
         savedStateHandle[KEY_READY] = value
     }
 
-    fun setFirstPlayer(player1Starts: Boolean) {
-        player1IsWhiteState = player1Starts
-        savedStateHandle[KEY_PLAYER1_WHITE] = player1Starts
-    }
-
     fun prepareNewMatch() {
         setPlayer2Ready(false)
     }
@@ -53,6 +41,5 @@ class LocalGameSessionViewModel(
     companion object {
         private const val KEY_OPPONENT = "opponent_name"
         private const val KEY_READY = "player2_ready"
-        private const val KEY_PLAYER1_WHITE = "player1_is_white"
     }
 }

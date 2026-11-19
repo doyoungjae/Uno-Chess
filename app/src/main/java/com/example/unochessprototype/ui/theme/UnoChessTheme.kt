@@ -27,26 +27,50 @@ data class BoardPalette(
     val dark: Color,
     val border: Color,
     val label: String,
+    val backTop: Color,
+    val backBottom: Color,
+    val backAccent: Color,
 )
 
+const val BOARD_THEME_COUNT = 4
+
+/** 보드판 + 카드 뒷면 프리셋. 0이 기본값. */
 fun boardPalette(theme: Int): BoardPalette = when (theme) {
     1 -> BoardPalette(
         light = Color(0xFFF0D9B5),
         dark = Color(0xFF8B5A3C),
         border = Color(0xFF4A2C21),
-        label = "Walnut",
+        label = "클래식 우드",
+        backTop = Color(0xFF8A5631),
+        backBottom = Color(0xFF3B2213),
+        backAccent = Color(0xFFF0CF96),
     )
     2 -> BoardPalette(
-        light = Color(0xFFCAD2D7),
-        dark = Color(0xFF52636F),
-        border = Color(0xFF28343C),
-        label = "Slate",
+        light = Color(0xFF8FA3C9),
+        dark = Color(0xFF3A4470),
+        border = Color(0xFF00E5FF),
+        label = "다크 네온",
+        backTop = Color(0xFF2A0F4A),
+        backBottom = Color(0xFF07020F),
+        backAccent = Color(0xFFFF3CAC),
+    )
+    3 -> BoardPalette(
+        light = Color(0xFFFBE7EF),
+        dark = Color(0xFFB9A7E0),
+        border = Color(0xFF7E6BB0),
+        label = "파스텔",
+        backTop = Color(0xFFF7B2C8),
+        backBottom = Color(0xFFA9C7F5),
+        backAccent = Color(0xFFFFFFFF),
     )
     else -> BoardPalette(
         light = Color(0xFFC7D9A7),
         dark = Color(0xFF41634A),
         border = Color(0xFF26382D),
-        label = "Forest",
+        label = "포레스트",
+        backTop = Color(0xFF173E28),
+        backBottom = Color(0xFF091C12),
+        backAccent = UnoChessColors.Lime,
     )
 }
 

@@ -1,0 +1,236 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1794455928.267308,
+    "seen": 1794456083.661992,
+    "ast_hash": "6f1713ce319a8985487343299d0bd8c3",
+    "semantic_hash": "6f1713ce319a8985487343299d0bd8c3"
+  },
+  "app/build.gradle.kts": {
+    "mtime": 1794457520.7517462,
+    "seen": 1794457652.8753855,
+    "ast_hash": "48f11434ff640bdad201b561ddff25cd",
+    "semantic_hash": "48f11434ff640bdad201b561ddff25cd"
+  },
+  "app/src/main/java/com/example/unochessprototype/MainActivity.kt": {
+    "mtime": 1794457520.7722208,
+    "seen": 1794457652.8753855,
+    "ast_hash": "9b5407f2bf30189dc760f054b66bc11c",
+    "semantic_hash": "9b5407f2bf30189dc760f054b66bc11c"
+  },
+  "app/src/main/java/com/example/unochessprototype/data/LocalPreferences.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "b4c70c79ff116ffe3d1d03506e218b70",
+    "semantic_hash": "b4c70c79ff116ffe3d1d03506e218b70"
+  },
+  "app/src/main/java/com/example/unochessprototype/game/ChessBoard.kt": {
+    "mtime": 1794458846.2463653,
+    "seen": 1794458875.8236303,
+    "ast_hash": "a6e543449df72e41babcad40f74c7efb",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/game/Models.kt": {
+    "mtime": 1794495319.0333478,
+    "seen": 1794495430.768367,
+    "ast_hash": "ac1c00a1404b93b6a029850bb493494b",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/game/UnoChessGame.kt": {
+    "mtime": 1794571923.1176507,
+    "seen": 1794572028.2083173,
+    "ast_hash": "902eb92bb9ae4c65c8463879e078aac5",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/UnoChessApp.kt": {
+    "mtime": 1794571934.52381,
+    "seen": 1794572028.2083373,
+    "ast_hash": "6d9c2ff39b9170261ba0ca82ac622e3a",
+    "semantic_hash": ""
+  },
+  "build.gradle.kts": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "28c44b171e632a74532d9ea74547e1b0",
+    "semantic_hash": "28c44b171e632a74532d9ea74547e1b0"
+  },
+  "gradlew": {
+    "mtime": 1793616544.3221917,
+    "seen": 1794456083.661992,
+    "ast_hash": "4f7a8a3a765f6f751d47568dc3bb913f",
+    "semantic_hash": "4f7a8a3a765f6f751d47568dc3bb913f"
+  },
+  "settings.gradle.kts": {
+    "mtime": 1793616544.3221917,
+    "seen": 1794456083.661992,
+    "ast_hash": "19fa51fb3bf5d5808c49aa0f794f655c",
+    "semantic_hash": "19fa51fb3bf5d5808c49aa0f794f655c"
+  },
+  "CLAUDE.md": {
+    "mtime": 1794455474.4197402,
+    "seen": 1794456083.661992,
+    "ast_hash": "67d88e9d0760c3ba54c75dfd9551c1c5",
+    "semantic_hash": "67d88e9d0760c3ba54c75dfd9551c1c5"
+  },
+  "README.md": {
+    "mtime": 1793616544.2884219,
+    "seen": 1794456083.661992,
+    "ast_hash": "9d6f2d0a2a609bf4f6bb5bec70c817ea",
+    "semantic_hash": "9d6f2d0a2a609bf4f6bb5bec70c817ea"
+  },
+  "app/google-services.json": {
+    "mtime": 1794457520.7684367,
+    "seen": 1794457652.8753855,
+    "ast_hash": "f95e8646bbf6583b309e5b6f82bdde28",
+    "semantic_hash": "f95e8646bbf6583b309e5b6f82bdde28"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/model/OnlineGameState.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "b9a7b66c114178a0f3e7b91e768e000a",
+    "semantic_hash": "b9a7b66c114178a0f3e7b91e768e000a"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/model/OnlineProfile.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "b0a64e7aad12fe4cb855d29c440dadb1",
+    "semantic_hash": "b0a64e7aad12fe4cb855d29c440dadb1"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/model/OnlineRoom.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "2a8a3ee33d65021b7f5e0b64694a7a67",
+    "semantic_hash": "2a8a3ee33d65021b7f5e0b64694a7a67"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/repository/OnlineRoomRepository.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "2d2e02bb773558216f75e857af1b606b",
+    "semantic_hash": "2d2e02bb773558216f75e857af1b606b"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/repository/OnlineUserRepository.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "2bc093df7ab94653e0e878b15ca6f235",
+    "semantic_hash": "2bc093df7ab94653e0e878b15ca6f235"
+  },
+  "app/src/main/java/com/example/unochessprototype/online/rules/OnlineGameRules.kt": {
+    "mtime": 1794457520.773227,
+    "seen": 1794457652.8753855,
+    "ast_hash": "3c27e6b263468fba68a821317d0ac8dd",
+    "semantic_hash": "3c27e6b263468fba68a821317d0ac8dd"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/navigation/MainBottomBar.kt": {
+    "mtime": 1794571934.52381,
+    "seen": 1794572028.20834,
+    "ast_hash": "586e8be7ed61c7a49d13a972f7ca0561",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/HomeTabScreen.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "81792f4a71bf336f767a7c22139316eb",
+    "semantic_hash": "81792f4a71bf336f767a7c22139316eb"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/LocalGameTabScreen.kt": {
+    "mtime": 1794571934.5258114,
+    "seen": 1794572028.2083452,
+    "ast_hash": "a939e072a0c71d06d11afb7459e8b8c2",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/OnlineGameScreen.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "80dbf1fa7061adfb37b63fa7631565a2",
+    "semantic_hash": "80dbf1fa7061adfb37b63fa7631565a2"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/OnlineLobbyScreen.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "2fd5f0d78f5a4571d411a9a6b9dab38c",
+    "semantic_hash": "2fd5f0d78f5a4571d411a9a6b9dab38c"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/OnlineTabScreen.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "3fb875b79157a88de29ed9af12dbf31b",
+    "semantic_hash": "3fb875b79157a88de29ed9af12dbf31b"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/ProfileSettingsTabScreen.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "ff53e2be6b47bd2c5fff9869b05a1e28",
+    "semantic_hash": "ff53e2be6b47bd2c5fff9869b05a1e28"
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/screen/ReleaseGameScreen.kt": {
+    "mtime": 1794572013.3923209,
+    "seen": 1794572028.2083576,
+    "ast_hash": "3bde0790f14124716d849c8106942d55",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/ui/theme/UnoChessTheme.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "3f11fde09e85d12568accc3ae7ef1faa",
+    "semantic_hash": "3f11fde09e85d12568accc3ae7ef1faa"
+  },
+  "app/src/main/java/com/example/unochessprototype/viewmodel/GameViewModel.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "30c0120ea539eb3036863b63ab65eb9b",
+    "semantic_hash": "30c0120ea539eb3036863b63ab65eb9b"
+  },
+  "app/src/main/java/com/example/unochessprototype/viewmodel/LocalGameSessionViewModel.kt": {
+    "mtime": 1794571934.5248103,
+    "seen": 1794572028.208365,
+    "ast_hash": "d100fd1eb00c85bfc8161a90a09d17f6",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/viewmodel/OnlineBattleViewModel.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "43a35fa48c1598a6f22083a6f018c6c6",
+    "semantic_hash": "43a35fa48c1598a6f22083a6f018c6c6"
+  },
+  "app/src/main/java/com/example/unochessprototype/viewmodel/UserProfileViewModel.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "11457e684269c6af4b60971d5dca71c3",
+    "semantic_hash": "11457e684269c6af4b60971d5dca71c3"
+  },
+  "app/src/test/java/com/example/unochessprototype/online/rules/OnlineGameRulesTest.kt": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "d18ea478b9ab84795778e1003c13682b",
+    "semantic_hash": "d18ea478b9ab84795778e1003c13682b"
+  },
+  "database.rules.json": {
+    "mtime": 1794457520.7850108,
+    "seen": 1794457652.8753855,
+    "ast_hash": "1bff00279b5a71569cf913a0a5074c29",
+    "semantic_hash": "1bff00279b5a71569cf913a0a5074c29"
+  },
+  "app/src/test/java/com/example/unochessprototype/game/UnoChessGameEndgameTest.kt": {
+    "mtime": 1794572022.035269,
+    "seen": 1794572028.2083726,
+    "ast_hash": "3b24f32628856c4409fabc27e8ed02ea",
+    "semantic_hash": ""
+  },
+  "fix.md": {
+    "mtime": 1794458688.9346654,
+    "seen": 1794458875.8237383,
+    "ast_hash": "4dd8bed32b74fdd9179d86844a0c0346",
+    "semantic_hash": ""
+  },
+  "rull.md": {
+    "mtime": 1794458686.88836,
+    "seen": 1794458875.823741,
+    "ast_hash": "3873adbc5f249535bff443f95087d19e",
+    "semantic_hash": ""
+  },
+  "app/src/main/java/com/example/unochessprototype/game/FirstTurnRound.kt": {
+    "mtime": 1794571904.3105307,
+    "seen": 1794572028.2083104,
+    "ast_hash": "d5872df2be9fbcefb31f154b7691ef43",
+    "semantic_hash": ""
+  }
+}

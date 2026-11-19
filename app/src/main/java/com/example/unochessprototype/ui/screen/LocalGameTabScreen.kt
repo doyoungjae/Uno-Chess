@@ -68,10 +68,13 @@ fun LocalGameTabScreen(
         Card(colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface)) {
             Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("매치 규칙", color = UnoChessColors.Lime, fontWeight = FontWeight.Black)
-                RuleLine("손패는 항상 5장")
+                RuleLine("턴 시작 1장 드로우(6장) → 1장 사용해 5장 유지")
+                RuleLine("쓸 카드가 없으면 2장 버리고 1장 드로우")
+                RuleLine("각자 10분 · 시간 초과 시 패배")
                 RuleLine("숫자 1~8 → A~H 열 활성화")
+                RuleLine("바닥 카드와 같은 색 또는 같은 숫자만 낼 수 있음 (JOKER는 언제나)")
                 RuleLine("JOKER → 이동 가능한 열 자유 선택")
-                RuleLine("시작 전 1~8 추첨으로 WHITE/선공 결정")
+                RuleLine("덱에서 1장씩 뽑아 높은 숫자가 WHITE·선공 (JOKER는 패배)")
                 RuleLine("상대 KING 직접 포획 시 즉시 승리")
             }
         }
