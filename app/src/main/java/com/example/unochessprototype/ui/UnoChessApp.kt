@@ -39,6 +39,7 @@ import com.example.unochessprototype.ui.screen.OnlineTabScreen
 import com.example.unochessprototype.ui.screen.ProfileSettingsTabScreen
 import com.example.unochessprototype.ui.screen.ReleaseGameScreen
 import com.example.unochessprototype.ui.theme.UnoChessColors
+import com.example.unochessprototype.ui.theme.UnoChessTheme
 import com.example.unochessprototype.viewmodel.GameViewModel
 import com.example.unochessprototype.viewmodel.LocalGameSessionViewModel
 import com.example.unochessprototype.viewmodel.OnlineBattleViewModel
@@ -106,6 +107,7 @@ fun UnoChessApp() {
         showSplash = false
     }
 
+    UnoChessTheme(boardTheme = settings.boardTheme) {
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -278,6 +280,7 @@ fun UnoChessApp() {
     }
     AnimatedVisibility(visible = showSplash, enter = EnterTransition.None, exit = fadeOut(tween(450))) {
         SplashScreen()
+    }
     }
     }
 }

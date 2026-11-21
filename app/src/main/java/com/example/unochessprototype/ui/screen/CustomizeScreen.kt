@@ -125,15 +125,20 @@ private fun CustomizeCard(settings: LocalSettings, onSettingsChange: (LocalSetti
             Text("보드 & 카드 커스텀", fontWeight = FontWeight.Black, fontSize = 17.sp)
             Text("내 화면에만 적용됩니다.", color = UnoChessColors.Muted, fontSize = 11.sp)
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(BOARD_THEME_COUNT) { index ->
-                    ThemePresetChip(
-                        settings = settings,
-                        theme = index,
-                        selected = settings.boardTheme == index,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSettingsChange(settings.copy(boardTheme = index)) },
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                for (rowStart in 0 until BOARD_THEME_COUNT step 5) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        repeat(minOf(5, BOARD_THEME_COUNT - rowStart)) { column ->
+                            val index = rowStart + column
+                            ThemePresetChip(
+                                settings = settings,
+                                theme = index,
+                                selected = settings.boardTheme == index,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onSettingsChange(settings.copy(boardTheme = index)) },
+                            )
+                        }
+                    }
                 }
             }
 

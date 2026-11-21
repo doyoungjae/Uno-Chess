@@ -200,6 +200,32 @@ class ChessBoard private constructor(
         return moves
     }
 
+    /** 상대 기물이 현재 플레이어의 KING을 공격하고 있는지 확인한다. */
+    fun isKingInCheck(player: Player): Boolean {
+        var kingSquare: Square? = null
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val piece = cells[row][col]
+                if (piece?.player == player && piece.type == PieceType.KING) {
+                    kingSquare = Square(row, col)
+                    break
+                }
+            }
+            if (kingSquare != null) break
+        }
+
+        val target = kingSquare ?: return false
+        for (row in 0..7) {
+            for (col in 0..7) {
+                val piece = cells[row][col]
+                if (piece?.player == player.opposite()) {
+                    if (legalMovesFrom(Square(row, col)).any { it.to == target }) return true
+                }
+            }
+        }
+        return false
+    }
+
     fun hasAnyLegalMove(player: Player): Boolean = allLegalMoves(player).isNotEmpty()
 
     fun hasLegalMoveFromFile(player: Player, file: Int): Boolean {

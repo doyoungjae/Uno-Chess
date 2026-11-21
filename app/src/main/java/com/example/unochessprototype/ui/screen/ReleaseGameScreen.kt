@@ -182,6 +182,7 @@ fun ReleaseGameScreen(
     var animationSerial by remember { mutableIntStateOf(0) }
 
     val scope = rememberCoroutineScope()
+    val chessAudio = rememberChessAudio()
     val flights = remember { CardFlights() }
     val anchors = remember { CardAnchors() }
     var introDone by rememberSaveable { mutableStateOf(game.completedTurns > 0) }
@@ -232,7 +233,10 @@ fun ReleaseGameScreen(
     }
 
     LaunchedEffect(result) {
-        if (result != null) onGameFinished(result)
+        if (result != null) {
+            chessAudio.playEnd()
+            onGameFinished(result)
+        }
     }
 
     val density = LocalDensity.current
@@ -410,6 +414,10 @@ fun ReleaseGameScreen(
                             move = destination,
                             chosenFileForJoker = if (selectedCard?.let(game::actsAsJoker) == true) activeFile else null,
                         )
+                        chessAudio.playMove(captured = play.moveOutcome.capturedPiece != null)
+                        if (game.result == null && game.board.isKingInCheck(game.currentPlayer)) {
+                            chessAudio.playCheck()
+                        }
 
                         animationSerial += 1
                         moveAnimation = BoardMoveAnimation(

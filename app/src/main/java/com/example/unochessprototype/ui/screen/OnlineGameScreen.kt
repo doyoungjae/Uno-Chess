@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -80,7 +81,18 @@ fun OnlineGameScreen(
     onForfeit: () -> Unit,
     onExitFinished: () -> Unit,
 ) {
+    val chessAudio = rememberChessAudio()
     val game = room?.game
+    LaunchedEffect(game?.resultType, game?.winnerUid, game?.resultReason) {
+        if (game?.hasResult() == true) chessAudio.playEnd()
+    }
+    LaunchedEffect(game?.completedTurns, game?.board) {
+        if (game != null && game.completedTurns > 0 && !game.hasResult()) {
+            val currentBoard = OnlineGameRules.boardFromState(game)
+            val sideToMove = OnlineGameRules.sideFor(game, game.currentUid)
+            if (currentBoard.isKingInCheck(sideToMove)) chessAudio.playCheck()
+        }
+    }
     if (room == null || game == null) {
         BackHandler { if (!busy) onForfeit() }
         Column(
@@ -192,6 +204,7 @@ fun OnlineGameScreen(
 
                 val destination = legalMoves.firstOrNull { it.to == square }
                 if (destination != null && selectedFrom != null) {
+                    chessAudio.playMove(captured = board.pieceAt(destination.to) != null)
                     onMove(
                         selectedCardId!!,
                         destination,

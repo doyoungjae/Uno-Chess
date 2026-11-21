@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.unochessprototype.ui.UnoChessApp
-import com.example.unochessprototype.ui.theme.UnoChessTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -13,9 +12,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            UnoChessTheme {
-                UnoChessApp()
-            }
+            UnoChessApp()
         }
     }
 }
