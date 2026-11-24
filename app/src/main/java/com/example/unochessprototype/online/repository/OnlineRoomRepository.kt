@@ -5,6 +5,7 @@ import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.online.model.OnlineResultType
 import com.example.unochessprototype.online.model.OnlineRoom
 import com.example.unochessprototype.online.model.RoomStatus
+import com.example.unochessprototype.online.rules.OnlineClock
 import com.example.unochessprototype.online.rules.OnlineGameRules
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -20,6 +21,22 @@ class OnlineRoomRepository(
     private val rootRef: DatabaseReference = database.reference
     private val roomsRef: DatabaseReference = rootRef.child("rooms")
     private val usersRef: DatabaseReference = rootRef.child("users")
+
+    var serverOffsetMs: Long = 0L; private set
+    private val offsetRef = rootRef.child(".info/serverTimeOffset")
+    private val offsetListener = object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) { serverOffsetMs = snapshot.getValue(Long::class.java) ?: 0L }
+        override fun onCancelled(error: DatabaseError) = Unit
+    }
+    init { offsetRef.addValueEventListener(offsetListener) }
+    fun serverNow(): Long = System.currentTimeMillis() + serverOffsetMs
+    fun close() { offsetRef.removeEventListener(offsetListener) }
+    fun checkClock(roomId: String, uid: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        updateGameRoom(roomId, { room ->
+            require(room.isParticipant(uid))
+            room
+        }, onSuccess, onError, clockOnly = true, actorUid = uid)
+    }
 
     fun observeWaitingRooms(
         localUid: String,
@@ -282,7 +299,9 @@ class OnlineRoomRepository(
                     return Transaction.abort()
                 }
 
-                val game = OnlineGameRules.createInitial(room.ownerUid, room.guestUid)
+                val game = OnlineGameRules.createInitial(room.ownerUid, room.guestUid).let { initial ->
+                    initial.copy(turnStartedAt = serverNow() + OnlineClock.INTRO_MS * initial.firstTurnRounds.size.coerceAtLeast(1))
+                }
                 currentData.value = room.copy(
                     status = RoomStatus.PLAYING,
                     game = game,
@@ -316,6 +335,7 @@ class OnlineRoomRepository(
     ) {
         updateGameRoom(
             roomId = roomId,
+            actorUid = actorUid,
             transform = { room ->
                 val game = room.game ?: error("게임 상태가 없습니다.")
                 val updatedGame = OnlineGameRules.playMove(game, actorUid, cardId, move, jokerFile)
@@ -339,6 +359,7 @@ class OnlineRoomRepository(
     ) {
         updateGameRoom(
             roomId = roomId,
+            actorUid = actorUid,
             transform = { room ->
                 val game = room.game ?: error("게임 상태가 없습니다.")
                 val updatedGame = OnlineGameRules.exchangeTwoCards(game, actorUid, cardIds)
@@ -361,6 +382,8 @@ class OnlineRoomRepository(
     ) {
         updateGameRoom(
             roomId = roomId,
+            actorUid = actorUid,
+            allowDuringTransition = true,
             transform = { room ->
                 val game = room.game ?: error("게임 상태가 없습니다.")
                 val updatedGame = if (game.hasResult()) game else OnlineGameRules.forfeit(game, actorUid)
@@ -418,6 +441,9 @@ class OnlineRoomRepository(
         transform: (OnlineRoom) -> OnlineRoom,
         onSuccess: () -> Unit,
         onError: (String) -> Unit,
+        clockOnly: Boolean = false,
+        actorUid: String,
+        allowDuringTransition: Boolean = false,
     ) {
         val ref = roomsRef.child(roomId)
         var abortReason = "게임 상태를 변경하지 못했습니다."
@@ -429,7 +455,21 @@ class OnlineRoomRepository(
                     return Transaction.abort()
                 }
                 return try {
-                    currentData.value = transform(room)
+                    require(room.isParticipant(actorUid)) { "Not a room participant." }
+                    val now = serverNow()
+                    val original = room.game ?: error("게임 상태가 없습니다.")
+                    if (original.hasResult()) return Transaction.success(currentData)
+                    val settled = OnlineClock.settle(original, now)
+                    if (!clockOnly && !allowDuringTransition && !settled.hasResult() && now < settled.turnStartedAt) {
+                        error("선공 추첨 또는 턴 전환 중입니다. 잠시 후 다시 시도해 주세요.")
+                    }
+                    val timedRoom = room.copy(game = settled)
+                    var updated = if (settled.hasResult()) timedRoom else transform(timedRoom)
+                    val next = updated.game!!
+                    if (!next.hasResult() && next.currentUid != original.currentUid) {
+                        updated = updated.copy(game = next.copy(turnStartedAt = now + OnlineClock.TRANSITION_MS))
+                    }
+                    currentData.value = updated.copy(status = if (updated.game!!.hasResult()) RoomStatus.FINISHED else updated.status)
                     Transaction.success(currentData)
                 } catch (error: Throwable) {
                     abortReason = error.message ?: "유효하지 않은 게임 동작입니다."
@@ -444,6 +484,6 @@ class OnlineRoomRepository(
                     else -> onError(abortReason)
                 }
             }
-        })
+        }, false)
     }
 }

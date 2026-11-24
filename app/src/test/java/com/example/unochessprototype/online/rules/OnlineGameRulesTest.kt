@@ -1,123 +1,113 @@
 package com.example.unochessprototype.online.rules
 
-import com.example.unochessprototype.game.ChessBoard
-import com.example.unochessprototype.game.Move
-import com.example.unochessprototype.game.Piece
-import com.example.unochessprototype.game.PieceType
-import com.example.unochessprototype.game.Player
-import com.example.unochessprototype.game.Square
-import com.example.unochessprototype.online.model.OnlineGameState
-import com.example.unochessprototype.online.model.OnlineResultType
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import com.example.unochessprototype.game.*
+import com.example.unochessprototype.online.model.*
 import kotlin.random.Random
+import org.junit.Assert.*
+import org.junit.Test
 
 class OnlineGameRulesTest {
-    @Test
-    fun initialStateHasValidUniqueCardDistributionAndFirstPlayer() {
-        val state = OnlineGameRules.createInitial("owner", "guest", Random(7))
-        assertEquals(5, state.ownerHand.size)
-        assertEquals(5, state.guestHand.size)
-        assertEquals(30, state.drawPile.size)
-        assertEquals(40, (state.ownerHand + state.guestHand + state.drawPile).toSet().size)
-        assertNotEquals(state.ownerFirstCard, state.guestFirstCard)
-        assertEquals(state.whiteUid, state.currentUid)
-        assertEquals(64, state.board.size)
+    @Test fun localAndOnlineRemainIdenticalAcrossCompleteGames() {
+        var exchanges = 0
+        var moves = 0
+        for (seed in 0 until 30) {
+            val localRandom = Random(seed)
+            val onlineRandom = Random(seed)
+            val local = UnoChessGame(localRandom)
+            var online = OnlineGameRules.createInitial("owner", "guest", onlineRandom)
+            assertEquals(local.snapshot(), OnlineGameRules.engine(online).snapshot())
+            repeat(200) {
+                if (local.result == null) {
+                    val uid = online.currentUid
+                    assertEquals(local.playableCards().map { it.id }, OnlineGameRules.playableCards(online, uid))
+                    assertEquals(local.canExchangeTwoCards(), OnlineGameRules.canExchange(online, uid))
+                    if (local.canExchangeTwoCards()) {
+                        val ids = local.hand().take(2).map { it.id }.toSet()
+                        local.exchangeTwoCards(ids)
+                        online = OnlineGameRules.exchangeTwoCards(online, uid, ids, onlineRandom)
+                        exchanges++
+                    } else {
+                        val card = local.playableCards().first()
+                        val file = if (local.actsAsJoker(card)) local.playableFiles(card).first() else null
+                        val legal = local.legalMovesForCard(card.id, file)
+                        assertEquals(legal, OnlineGameRules.legalMovesForCard(online, uid, card.id, file))
+                        local.playCardAndMove(card.id, legal.first(), file)
+                        online = OnlineGameRules.playMove(online, uid, card.id, legal.first(), file, onlineRandom)
+                        moves++
+                    }
+                    assertEquals("seed=$seed turn=${local.completedTurns}", local.snapshot(), OnlineGameRules.engine(online).snapshot())
+                    val snapshot = local.snapshot()
+                    val cards = snapshot.whiteHand + snapshot.blackHand + snapshot.drawPile + snapshot.discardPile
+                    assertEquals(40, cards.size)
+                    assertEquals(40, cards.map { it.id }.toSet().size)
+                }
+            }
+        }
+        assertTrue(exchanges > 0)
+        assertTrue(moves > 0)
     }
 
-    @Test
-    fun normalMoveConsumesCardDrawsReplacementAndChangesTurn() {
-        val state = OnlineGameRules.createInitial("owner", "guest", Random(11))
-        val uid = state.currentUid
-        val cardId = OnlineGameRules.playableCards(state, uid).first()
-        val card = OnlineGameRules.card(cardId)
-        val jokerFile = if (card.isJoker) OnlineGameRules.playableFiles(state, uid, cardId).first() else null
-        val move = OnlineGameRules.legalMovesForCard(state, uid, cardId, jokerFile).first()
+    @Test fun mismatchedColorAndNumberCannotBePlayedEvenIfPieceCanMove() {
+        val state = (0..100).map { OnlineGameRules.createInitial("owner", "guest", Random(it)) }.first { s ->
+            val engine = OnlineGameRules.engine(s)
+            engine.hand().any { !engine.matchesTopDiscard(it) && it.number!! - 1 in engine.board.movableFiles(engine.currentPlayer) }
+        }
+        val engine = OnlineGameRules.engine(state)
+        val card = engine.hand().first { !engine.matchesTopDiscard(it) && it.number!! - 1 in engine.board.movableFiles(engine.currentPlayer) }
+        assertTrue(OnlineGameRules.playableFiles(state, state.currentUid, card.id).isEmpty())
+        val move = (0..7).flatMap { engine.board.legalMovesFrom(Square(it, card.number!! - 1)) }
+            .first { engine.board.pieceAt(it.from)?.player == engine.currentPlayer }
+        try {
+            OnlineGameRules.playMove(state, state.currentUid, card.id, move)
+            fail("A mismatched card must be rejected")
+        } catch (_: IllegalArgumentException) { }
+    }
 
-        val next = OnlineGameRules.playMove(state, uid, cardId, move, jokerFile, Random(13))
-        assertEquals(1, next.completedTurns)
-        assertFalse(next.hasResult())
-        assertNotEquals(uid, next.currentUid)
-        assertEquals(5, next.handFor(uid).size)
-        assertFalse(cardId in next.handFor(uid))
+    @Test fun restoreDoesNotRepeatDealOrTurnDraw() {
+        val state = OnlineGameRules.createInitial("owner", "guest", Random(7))
+        assertEquals(6, state.handFor(state.currentUid).size)
+        assertEquals(1, state.discardPile.size)
+        val first = OnlineGameRules.engine(state).snapshot()
+        assertEquals(first, UnoChessGame(initialState = first).snapshot())
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun opponentCannotPlayOutOfTurn() {
         val state = OnlineGameRules.createInitial("owner", "guest", Random(17))
-        val wrongUid = if (state.currentUid == "owner") "guest" else "owner"
-        OnlineGameRules.playMove(
-            state = state,
-            actorUid = wrongUid,
-            cardId = state.handFor(wrongUid).first(),
-            move = Move(Square(6, 0), Square(5, 0)),
-        )
+        val opponent = if (state.currentUid == "owner") "guest" else "owner"
+        OnlineGameRules.playMove(state, opponent, state.handFor(opponent).first(), Move(Square(6, 0), Square(5, 0)))
     }
 
-    @Test
-    fun exchangeWorksOnlyWhenNoHandCardCanActivateMovableFile() {
-        val board = ChessBoard.empty().apply {
-            placeForTest(Square(7, 4), Piece(Player.WHITE, PieceType.KING))
-            placeForTest(Square(0, 4), Piece(Player.BLACK, PieceType.KING))
-        }
-        val ownerHand = listOf(0, 1, 2, 5, 6)
-        val guestHand = listOf(8, 9, 10, 13, 14)
-        val state = OnlineGameState(
-            ownerUid = "owner",
-            guestUid = "guest",
-            whiteUid = "owner",
-            blackUid = "guest",
-            currentUid = "owner",
-            ownerFirstCard = 8,
-            guestFirstCard = 2,
-            board = board.toCodes(),
-            ownerHand = ownerHand,
-            guestHand = guestHand,
-            drawPile = (0 until 40).filterNot { it in (ownerHand + guestHand).toSet() },
-        )
-
-        assertTrue(OnlineGameRules.canExchange(state, "owner"))
-        val next = OnlineGameRules.exchangeTwoCards(state, "owner", setOf(0, 1), Random(19))
-        assertEquals(5, next.ownerHand.size)
-        assertEquals("guest", next.currentUid)
-        assertEquals(1, next.completedTurns)
-    }
-
-    @Test
-    fun kingCaptureEndsGameImmediately() {
+    @Test fun endgameNumberCardActsAsJokerAndCapturesKingOnAnotherFile() {
         val board = ChessBoard.empty().apply {
             placeForTest(Square(7, 0), Piece(Player.WHITE, PieceType.ROOK))
             placeForTest(Square(7, 7), Piece(Player.WHITE, PieceType.KING))
             placeForTest(Square(0, 0), Piece(Player.BLACK, PieceType.KING))
         }
-        val ownerHand = listOf(0, 1, 2, 3, 4)
-        val guestHand = listOf(8, 9, 10, 11, 12)
-        val state = OnlineGameState(
-            ownerUid = "owner",
-            guestUid = "guest",
-            whiteUid = "owner",
-            blackUid = "guest",
-            currentUid = "owner",
-            ownerFirstCard = 8,
-            guestFirstCard = 1,
-            board = board.toCodes(),
-            ownerHand = ownerHand,
-            guestHand = guestHand,
-            drawPile = (0 until 40).filterNot { it in (ownerHand + guestHand).toSet() },
-        )
-
-        val next = OnlineGameRules.playMove(
-            state = state,
-            actorUid = "owner",
-            cardId = 0,
-            move = Move(Square(7, 0), Square(0, 0)),
-        )
-        assertEquals(OnlineResultType.WIN, next.resultType)
+        val state = OnlineGameState(version = 2, ownerUid = "owner", guestUid = "guest",
+            whiteUid = "owner", blackUid = "guest", currentUid = "owner", board = board.toCodes(),
+            ownerHand = listOf(1, 2, 3, 4, 5, 6), guestHand = listOf(8, 9, 10, 11, 12),
+            discardPile = listOf(23), lastDiscardId = 23,
+            drawPile = (0..39).filterNot { it in listOf(1,2,3,4,5,6,8,9,10,11,12,23) })
+        assertTrue(OnlineGameRules.actsAsJoker(state, "owner", 1))
+        val local = OnlineGameRules.engine(state)
+        val move = Move(Square(7, 0), Square(0, 0))
+        local.playCardAndMove(1, move, 0)
+        val next = OnlineGameRules.playMove(state, "owner", 1, move, 0)
+        assertEquals(local.snapshot(), OnlineGameRules.engine(next).snapshot())
         assertEquals("owner", next.winnerUid)
-        assertEquals(4, next.ownerHand.size)
-        assertEquals(0, next.completedTurns)
+        assertEquals(5, next.ownerHand.size)
+    }
+
+    @Test fun timeoutUsesLocalResultAndLog() {
+        val state = OnlineGameRules.createInitial("owner", "guest", Random(3))
+        val local = OnlineGameRules.engine(state)
+        local.timeOut(Player.WHITE)
+        assertEquals(local.snapshot(), OnlineGameRules.engine(OnlineGameRules.timeOut(state, Player.WHITE)).snapshot())
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun legacyGameCannotSilentlyUseNewRules() {
+        OnlineGameRules.engine(OnlineGameState())
     }
 }

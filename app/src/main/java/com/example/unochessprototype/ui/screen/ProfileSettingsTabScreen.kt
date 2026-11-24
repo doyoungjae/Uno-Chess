@@ -1,5 +1,6 @@
 package com.example.unochessprototype.ui.screen
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -22,13 +23,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -51,13 +51,12 @@ fun ProfileSettingsTabScreen(
     onSaveOnlineIdentity: (String, String) -> Unit,
     onSaveSettings: (LocalSettings) -> Unit,
     onRetryProfile: () -> Unit,
+    onBack: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
+
     var nickname by rememberSaveable { mutableStateOf(profile.nickname) }
     var avatar by rememberSaveable { mutableStateOf(profile.avatar) }
-    var bgmEnabled by rememberSaveable(settings.bgmEnabled) { mutableStateOf(settings.bgmEnabled) }
-    var effectsEnabled by rememberSaveable(settings.effectsEnabled) { mutableStateOf(settings.effectsEnabled) }
-    var bgmVolume by rememberSaveable(settings.bgmVolume) { mutableFloatStateOf(settings.bgmVolume) }
-    var effectsVolume by rememberSaveable(settings.effectsVolume) { mutableFloatStateOf(settings.effectsVolume) }
     var moveHints by rememberSaveable(settings.moveHints) { mutableStateOf(settings.moveHints) }
     var showCoordinates by rememberSaveable(settings.showCoordinates) { mutableStateOf(settings.showCoordinates) }
 
@@ -78,6 +77,9 @@ fun ProfileSettingsTabScreen(
     ) {
         item {
             Column {
+                TextButton(onClick = onBack) {
+                    Text("← 설정", color = UnoChessColors.Lime)
+                }
                 Text("프로필 · 설정", fontSize = 24.sp, fontWeight = FontWeight.Black)
                 Text("온라인 프로필과 게임 환경 설정", color = UnoChessColors.Muted, fontSize = 12.sp)
             }
@@ -157,16 +159,6 @@ fun ProfileSettingsTabScreen(
             }
         }
 
-        item { SectionTitle("사운드") }
-        item {
-            SettingCard {
-                ToggleRow("배경 음악", "BGM 재생 여부", bgmEnabled) { bgmEnabled = it }
-                Slider(value = bgmVolume, onValueChange = { bgmVolume = it }, enabled = bgmEnabled)
-                ToggleRow("효과음", "카드 선택·기물 이동·포획 효과음", effectsEnabled) { effectsEnabled = it }
-                Slider(value = effectsVolume, onValueChange = { effectsVolume = it }, enabled = effectsEnabled)
-            }
-        }
-
         item { SectionTitle("게임 표시") }
         item {
             SettingCard {
@@ -181,10 +173,6 @@ fun ProfileSettingsTabScreen(
                     onSaveOnlineIdentity(nickname, avatar)
                     onSaveSettings(
                         settings.copy(
-                            bgmEnabled = bgmEnabled,
-                            effectsEnabled = effectsEnabled,
-                            bgmVolume = bgmVolume,
-                            effectsVolume = effectsVolume,
                             moveHints = moveHints,
                             showCoordinates = showCoordinates,
                         )
@@ -252,4 +240,3 @@ private fun ToggleRow(
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
-

@@ -28,20 +28,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unochessprototype.data.LocalSettings
 import com.example.unochessprototype.online.model.OnlineProfile
+import com.example.unochessprototype.ui.theme.UnoChessColors
 import com.example.unochessprototype.ui.theme.boardPalette
 import com.example.unochessprototype.ui.theme.rememberLocalImage
-import com.example.unochessprototype.ui.theme.UnoChessColors
 
 @Composable
 fun HomeTabScreen(

@@ -32,6 +32,12 @@ internal class ChessAudio(context: Context) {
         setVolume(0.16f, 0.16f)
     }
 
+    private var effectsVolume = 0.8f
+    fun configure(settings: com.example.unochessprototype.data.LocalSettings) {
+        effectsVolume = if (settings.effectsEnabled) settings.effectsVolume.coerceIn(0f, 1f) else 0f
+        music?.setVolume(settings.bgmVolume * 0.23f, settings.bgmVolume * 0.23f)
+        if (settings.bgmEnabled) startMusic() else stopMusic()
+    }
     fun startMusic() {
         if (music?.isPlaying == false) music?.start()
     }
@@ -42,15 +48,15 @@ internal class ChessAudio(context: Context) {
 
     fun playMove(captured: Boolean = false) {
         val sound = if (captured) captureSound else moveSound
-        soundPool.play(sound, 0.85f, 0.85f, 1, 0, 1f)
+        soundPool.play(sound, effectsVolume, effectsVolume, 1, 0, 1f)
     }
 
     fun playCheck() {
-        soundPool.play(checkSound, 0.75f, 0.75f, 2, 0, 1f)
+        soundPool.play(checkSound, effectsVolume, effectsVolume, 2, 0, 1f)
     }
 
     fun playEnd() {
-        soundPool.play(endSound, 0.85f, 0.85f, 3, 0, 1f)
+        soundPool.play(endSound, effectsVolume, effectsVolume, 3, 0, 1f)
     }
 
     fun release() {
@@ -61,15 +67,16 @@ internal class ChessAudio(context: Context) {
 }
 
 @Composable
-internal fun rememberChessAudio(): ChessAudio {
+internal fun rememberChessAudio(settings: com.example.unochessprototype.data.LocalSettings): ChessAudio {
     val context = LocalContext.current
     val audio = remember(context) { ChessAudio(context) }
     DisposableEffect(audio) {
-        audio.startMusic()
+
         onDispose {
             audio.stopMusic()
             audio.release()
         }
     }
+    androidx.compose.runtime.SideEffect { audio.configure(settings) }
     return audio
 }
