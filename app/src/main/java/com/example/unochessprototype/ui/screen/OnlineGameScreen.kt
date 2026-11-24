@@ -17,15 +17,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -49,11 +50,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.zIndex
 import com.example.unochessprototype.data.LocalSettings
 import com.example.unochessprototype.game.CardColor
@@ -137,7 +137,6 @@ fun OnlineGameScreen(
     var activeFile by remember(game.currentUid, game.completedTurns) { mutableStateOf<Int?>(null) }
     var selectedFrom by remember(game.currentUid, game.completedTurns) { mutableStateOf<Square?>(null) }
     var exchangeSelection by remember(game.currentUid, game.completedTurns) { mutableStateOf<Set<Int>>(emptySet()) }
-    var pendingJokerCardId by remember(game.currentUid, game.completedTurns) { mutableStateOf<Int?>(null) }
     var showFirstTurn by rememberSaveable(room.roomId) { mutableStateOf(game.completedTurns == 0 && !game.hasResult() && serverNow() < game.turnStartedAt) }
     var showExitDialog by remember { mutableStateOf(false) }
 
@@ -209,6 +208,9 @@ fun OnlineGameScreen(
     val mySide = runCatching { OnlineGameRules.sideFor(game, profile.uid) }.getOrNull()
     val board = remember(game.board) { OnlineGameRules.boardFromState(game) }
     val selectedCard = selectedCardId?.let(OnlineGameRules::card)
+    val highlightFiles = selectedCardId?.let {
+        OnlineGameRules.playableFiles(game, profile.uid, it)
+    } ?: emptySet()
     val canExchange = OnlineGameRules.canExchange(game, profile.uid)
     val legalMoves = if (selectedCardId != null && activeFile != null && selectedFrom != null) {
         OnlineGameRules.legalMovesForCard(
@@ -272,6 +274,7 @@ fun OnlineGameScreen(
                 game.hasResult() -> resultText(game.resultType, game.winnerUid, profile.uid, game.resultReason)
                 isMyTurn && canExchange -> "바닥 카드와 맞는 사용 가능한 카드가 없습니다. 카드 2장을 선택해 교환하세요."
                 isMyTurn && selectedCardId == null -> "내 차례 · 바닥 카드와 같은 색/숫자 또는 JOKER를 선택하세요."
+                isMyTurn && selectedCardId != null && activeFile == null -> "JOKER · 하이라이트된 열의 내 기물을 터치하세요"
                 isMyTurn && activeFile != null && selectedFrom == null -> "${(65 + activeFile!!).toChar()}열에서 움직일 기물을 선택하세요."
                 isMyTurn -> "이동할 칸을 선택하세요."
                 !clockAllowsMove -> "선공 추첨 또는 턴 전환 중..."
@@ -293,13 +296,13 @@ fun OnlineGameScreen(
             flipped = mySide == Player.BLACK,
             moveAnimation = moveAnimation,
             onAnimationFinished = { moveAnimation = null },
-            highlightFiles = setOfNotNull(activeFile),
+            highlightFiles = highlightFiles,
             selectedFrom = selectedFrom,
             legalMoves = legalMoves,
             settings = settings,
-            enabled = isMyTurn && !busy && !animating && !showFirstTurn && selectedCardId != null && activeFile != null,
+            enabled = isMyTurn && !busy && !animating && !showFirstTurn && selectedCardId != null,
             onSquareClick = { square ->
-                if (!isMyTurn || busy || selectedCardId == null || activeFile == null) return@SharedChessBoard
+                if (!isMyTurn || busy || selectedCardId == null) return@SharedChessBoard
 
                 val destination = legalMoves.firstOrNull { it.to == square }
                 if (destination != null && selectedFrom != null) {
@@ -312,7 +315,6 @@ fun OnlineGameScreen(
                     focusedCardId = null
                     activeFile = null
                     selectedFrom = null
-                    pendingJokerCardId = null
                     return@SharedChessBoard
                 }
 
@@ -320,15 +322,11 @@ fun OnlineGameScreen(
                 val side = mySide
                 if (
                     side != null &&
-                    square.col == activeFile &&
+                    square.col in highlightFiles &&
                     piece?.player == side &&
-                    OnlineGameRules.legalMovesForCard(
-                        game,
-                        profile.uid,
-                        selectedCardId!!,
-                        if (selectedCard != null && OnlineGameRules.actsAsJoker(game, profile.uid, selectedCard.id)) activeFile else null,
-                    ).any { it.from == square }
+                    board.legalMovesFrom(square).isNotEmpty()
                 ) {
+                    activeFile = square.col
                     selectedFrom = square
                 }
             },
@@ -366,21 +364,26 @@ fun OnlineGameScreen(
                         .onGloballyPositioned { anchors.hand[id] = it.boundsInRoot() }.alpha(if (id in hidden) 0f else 1f),
                     onTap = {
                         if (!isMyTurn || busy) return@FanCard
-                        focusedCardId = id
                         if (canExchange) {
+                            focusedCardId = id
                             exchangeSelection = when {
                                 id in exchangeSelection -> exchangeSelection - id
                                 exchangeSelection.size < 2 -> exchangeSelection + id
                                 else -> exchangeSelection
                             }
+                        } else if (id == selectedCardId) {
+                            selectedCardId = null
+                            focusedCardId = null
+                            activeFile = null
+                            selectedFrom = null
                         } else {
                             val files = OnlineGameRules.playableFiles(game, profile.uid, id)
                             if (files.isNotEmpty()) {
                                 selectedCardId = id
+                                focusedCardId = id
                                 selectedFrom = null
                                 if (OnlineGameRules.actsAsJoker(game, profile.uid, id)) {
                                     activeFile = null
-                                    pendingJokerCardId = id
                                 } else {
                                     activeFile = card.number!! - 1
                                 }
@@ -418,19 +421,6 @@ fun OnlineGameScreen(
     if (showLogs) GameLogOverlay(game.logs) { showLogs = false }
     }
 
-    val pendingJoker = pendingJokerCardId
-    if (pendingJoker != null && !game.hasResult()) {
-        val files = OnlineGameRules.playableFiles(game, profile.uid, pendingJoker)
-        MandatoryOnlineJokerDialog(
-            files = files,
-            onSelect = { file ->
-                activeFile = file
-                pendingJokerCardId = null
-                selectedFrom = null
-            },
-        )
-    }
-
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { if (!busy) showExitDialog = false },
@@ -452,15 +442,48 @@ fun OnlineGameScreen(
     }
 
     if (game.hasResult()) {
+        val isDraw = game.resultType == OnlineResultType.DRAW
+        val isWinner = game.winnerUid == profile.uid
+        val resultColor = when {
+            isDraw -> UnoChessColors.Muted
+            isWinner -> UnoChessColors.Lime
+            else -> UnoChessColors.Danger
+        }
+        val resultIcon = when {
+            isDraw -> Icons.Rounded.Handshake
+            isWinner -> Icons.Rounded.EmojiEvents
+            else -> Icons.Rounded.Flag
+        }
+        val title = when {
+            isDraw -> "무승부입니다"
+            isWinner -> "승리했습니다!"
+            else -> "패배했습니다"
+        }
+        // 엔진의 승자 관점 사유를 각 사용자의 관점으로 표시한다. 저장된 결과는 변경하지 않는다.
+        val reason = when {
+            isDraw -> game.resultReason.ifBlank { "승자 없이 경기가 종료되었습니다." }
+            "시간" in game.resultReason -> if (isWinner) "상대의 제한 시간이 끝났습니다." else "나의 제한 시간이 끝났습니다."
+            "나갔" in game.resultReason || "기권" in game.resultReason ->
+                if (isWinner) "상대가 기권하여 승리했습니다." else "기권하여 경기가 종료되었습니다."
+            "KING" in game.resultReason -> if (isWinner) "상대의 킹을 포획했습니다." else "나의 킹이 포획되었습니다."
+            else -> game.resultReason.ifBlank { "온라인 경기가 종료되었습니다." }
+        }
         AlertDialog(
             onDismissRequest = { if (!busy) onExitFinished() },
-            title = { Text(if (game.resultType == OnlineResultType.DRAW) "무승부" else if (game.winnerUid == profile.uid) "승리" else "패배") },
-            text = { Text(game.resultReason.ifBlank { "온라인 경기가 종료되었습니다." }) },
+            icon = { Icon(resultIcon, contentDescription = null, tint = resultColor, modifier = Modifier.size(40.dp)) },
+            title = {
+                Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+                    color = resultColor, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(reason, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            },
             confirmButton = {
-                Button(onClick = onExitFinished) { Text("홈으로 돌아가기") }
+                Button(onClick = onExitFinished, enabled = !busy) { Text("홈으로 돌아가기") }
             },
         )
     }
+
 }
 
 @Composable
@@ -478,37 +501,17 @@ private fun PlayerLine(avatar: String, name: String, subtitle: String, active: B
                 contentAlignment = Alignment.Center,
             ) { Text(avatar, fontSize = 21.sp) }
             Column(modifier = Modifier.weight(1f).padding(start = 9.dp)) {
-                Text(name, fontWeight = FontWeight.Black, fontSize = 13.sp)
+                Text(name, fontWeight = FontWeight.Black, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(subtitle, color = UnoChessColors.Muted, fontSize = 9.sp)
             }
-            ChessClock(clockMs, active)
-            if (active) Text("TURN", color = UnoChessColors.Lime, fontWeight = FontWeight.Black, fontSize = 10.sp)
-        }
-    }
-}
-
-@Composable
-private fun MandatoryOnlineJokerDialog(files: Set<Int>, onSelect: (Int) -> Unit) {
-    Dialog(
-        onDismissRequest = {},
-        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-    ) {
-        Card(colors = CardDefaults.cardColors(containerColor = UnoChessColors.Surface), shape = RoundedCornerShape(22.dp)) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("JOKER 열 선택", fontWeight = FontWeight.Black, fontSize = 19.sp)
-                Text("움직일 수 있는 열 중 하나를 반드시 선택하세요.", color = UnoChessColors.Muted, fontSize = 11.sp)
-                repeat(2) { row ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        repeat(4) { offset ->
-                            val file = row * 4 + offset
-                            OutlinedButton(
-                                onClick = { onSelect(file) },
-                                enabled = file in files,
-                                modifier = Modifier.weight(1f),
-                            ) { Text(('A'.code + file).toChar().toString()) }
-                        }
-                    }
-                }
+            Row(
+                modifier = Modifier.padding(start = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ChessClock(clockMs, active)
+                if (active) Text("TURN", color = UnoChessColors.Lime, fontWeight = FontWeight.Black,
+                    fontSize = 10.sp, maxLines = 1)
             }
         }
     }
