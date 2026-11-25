@@ -2,18 +2,17 @@ package com.example.unochessprototype.ui.screen
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.MediaPlayer
 import android.media.SoundPool
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.example.unochessprototype.R
+import com.example.unochessprototype.data.LocalSettings
 
 internal class ChessAudio(context: Context) {
-    private val appContext = context.applicationContext
     private val soundPool = SoundPool.Builder()
-        .setMaxStreams(4)
+        .setMaxStreams(6)
         .setAudioAttributes(
             AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_GAME)
@@ -22,54 +21,52 @@ internal class ChessAudio(context: Context) {
         )
         .build()
 
-    private val moveSound = soundPool.load(appContext, R.raw.chess_move, 1)
-    private val captureSound = soundPool.load(appContext, R.raw.chess_capture, 1)
-    private val checkSound = soundPool.load(appContext, R.raw.chess_check, 1)
-    private val endSound = soundPool.load(appContext, R.raw.chess_end, 1)
+    private val moveSound = soundPool.load(context.applicationContext, R.raw.chess_move, 1)
+    private val captureSound = soundPool.load(context.applicationContext, R.raw.chess_capture, 1)
+    private val checkSound = soundPool.load(context.applicationContext, R.raw.chess_check, 1)
+    private val endSound = soundPool.load(context.applicationContext, R.raw.chess_end, 1)
+    private val cardDrawSound = soundPool.load(context.applicationContext, R.raw.card_draw, 1)
+    private val cardPlaceSound = soundPool.load(context.applicationContext, R.raw.card_place, 1)
 
-    private var music: MediaPlayer? = MediaPlayer.create(appContext, R.raw.chess_ambient)?.apply {
-        isLooping = true
-        setVolume(0.16f, 0.16f)
+    private var effectsVolume = 0.8f
+
+    fun configure(settings: LocalSettings) {
+        effectsVolume = if (settings.effectsEnabled) settings.effectsVolume.coerceIn(0f, 1f) else 0f
     }
 
-    fun startMusic() {
-        if (music?.isPlaying == false) music?.start()
+    fun playCardDraw() {
+        soundPool.play(cardDrawSound, effectsVolume, effectsVolume, 1, 0, 1f)
     }
 
-    fun stopMusic() {
-        if (music?.isPlaying == true) music?.pause()
+    fun playCardPlace() {
+        soundPool.play(cardPlaceSound, effectsVolume, effectsVolume, 1, 0, 1f)
     }
 
     fun playMove(captured: Boolean = false) {
         val sound = if (captured) captureSound else moveSound
-        soundPool.play(sound, 0.85f, 0.85f, 1, 0, 1f)
+        soundPool.play(sound, effectsVolume, effectsVolume, 1, 0, 1f)
     }
 
     fun playCheck() {
-        soundPool.play(checkSound, 0.75f, 0.75f, 2, 0, 1f)
+        soundPool.play(checkSound, effectsVolume, effectsVolume, 2, 0, 1f)
     }
 
     fun playEnd() {
-        soundPool.play(endSound, 0.85f, 0.85f, 3, 0, 1f)
+        soundPool.play(endSound, effectsVolume, effectsVolume, 3, 0, 1f)
     }
 
     fun release() {
-        music?.release()
-        music = null
         soundPool.release()
     }
 }
 
 @Composable
-internal fun rememberChessAudio(): ChessAudio {
+internal fun rememberChessAudio(settings: LocalSettings): ChessAudio {
     val context = LocalContext.current
     val audio = remember(context) { ChessAudio(context) }
     DisposableEffect(audio) {
-        audio.startMusic()
-        onDispose {
-            audio.stopMusic()
-            audio.release()
-        }
+        onDispose { audio.release() }
     }
+    androidx.compose.runtime.SideEffect { audio.configure(settings) }
     return audio
 }

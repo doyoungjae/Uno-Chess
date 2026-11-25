@@ -1,10 +1,10 @@
 package com.example.unochessprototype.game
 
+import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.random.Random
 
 class UnoChessGameEndgameTest {
     // Same id layout as UnoChessGame.createAllCards(): 8 numbers per color, jokers from 32.

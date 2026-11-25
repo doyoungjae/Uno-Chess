@@ -109,7 +109,7 @@ fun OnlineLobbyScreen(
             Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("온라인 경기 규칙", color = UnoChessColors.Lime, fontWeight = FontWeight.Black)
                 LobbyRule("두 플레이어가 모두 READY여야 방장이 시작할 수 있습니다.")
-                LobbyRule("시작 시 1~8 숫자를 각각 뽑아 큰 숫자가 WHITE/선공입니다.")
+                LobbyRule("로컬과 같은 카드 추첨으로 선공을 정합니다. 동점은 다시 뽑습니다.")
                 LobbyRule("사용한 카드와 보드 상태는 Firebase를 통해 실시간 동기화됩니다.")
                 LobbyRule("KING을 직접 포획하면 즉시 승리합니다.")
             }

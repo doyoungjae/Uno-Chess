@@ -5,14 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import com.example.unochessprototype.game.Move
 import com.example.unochessprototype.online.model.OnlineProfile
 import com.example.unochessprototype.online.model.OnlineRoom
 import com.example.unochessprototype.online.repository.OnlineRoomRepository
 import com.google.firebase.database.ValueEventListener
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 data class OnlineBattleUiState(
     val rooms: List<OnlineRoom> = emptyList(),
@@ -200,6 +200,15 @@ class OnlineBattleViewModel : ViewModel() {
         )
     }
 
+    fun serverNow(): Long = repository.serverNow()
+    fun checkClock(roomId: String, uid: String) {
+        if (uiState.busy) return
+        uiState = uiState.copy(busy = true)
+        repository.checkClock(roomId, uid,
+            onSuccess = { uiState = uiState.copy(busy = false) },
+            onError = { uiState = uiState.copy(busy = false, errorMessage = it) })
+    }
+
     fun clearError() {
         uiState = uiState.copy(errorMessage = null)
     }
@@ -217,6 +226,7 @@ class OnlineBattleViewModel : ViewModel() {
     override fun onCleared() {
         roomsListener?.let(repository::removeWaitingRoomsListener)
         stopObservingRoom()
+        repository.close()
         super.onCleared()
     }
 }

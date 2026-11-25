@@ -51,7 +51,7 @@ fun MainBottomBar(
         BottomDestination(AppRoute.ONLINE, "온라인") {
             Icon(Icons.Rounded.Public, contentDescription = null)
         },
-        BottomDestination(AppRoute.PROFILE, "프로필") {
+        BottomDestination(AppRoute.PROFILE, "설정") {
             Icon(Icons.Rounded.Person, contentDescription = null)
         },
     )

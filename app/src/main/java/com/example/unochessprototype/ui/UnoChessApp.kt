@@ -8,9 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,15 +27,16 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unochessprototype.data.LocalPreferences
 import com.example.unochessprototype.ui.navigation.AppRoute
 import com.example.unochessprototype.ui.navigation.MainBottomBar
+import com.example.unochessprototype.ui.screen.*
 import com.example.unochessprototype.ui.screen.CustomizeScreen
 import com.example.unochessprototype.ui.screen.HomeTabScreen
-import com.example.unochessprototype.ui.screen.SplashScreen
 import com.example.unochessprototype.ui.screen.LocalGameTabScreen
 import com.example.unochessprototype.ui.screen.OnlineGameScreen
 import com.example.unochessprototype.ui.screen.OnlineLobbyScreen
 import com.example.unochessprototype.ui.screen.OnlineTabScreen
 import com.example.unochessprototype.ui.screen.ProfileSettingsTabScreen
 import com.example.unochessprototype.ui.screen.ReleaseGameScreen
+import com.example.unochessprototype.ui.screen.SplashScreen
 import com.example.unochessprototype.ui.theme.UnoChessColors
 import com.example.unochessprototype.ui.theme.UnoChessTheme
 import com.example.unochessprototype.viewmodel.GameViewModel
@@ -185,6 +184,21 @@ fun UnoChessApp() {
 
             composable(AppRoute.PROFILE) {
                 BackHandler { navigateToRoot(AppRoute.HOME) }
+                SettingsMainScreen { category -> navController.navigate("settings/" + category.name) }
+            }
+            composable("settings/SOUND") {
+                SoundSettingsScreen(settings, { settings = it; preferences.saveSettings(it) }, { navController.popBackStack() })
+            }
+            composable("settings/FRIENDS") {
+                FriendsSettingsScreen(friends, { navController.popBackStack() })
+            }
+            composable("settings/STATISTICS") {
+                StatisticsSettingsScreen(profile, { navController.popBackStack() })
+            }
+            composable("settings/RATE_APP") {
+                RateAppSettingsScreen { navController.popBackStack() }
+            }
+            composable("settings/PROFILE") {
                 ProfileSettingsTabScreen(
                     profile = profile,
                     profileLoading = profileState.isLoading,
@@ -197,6 +211,7 @@ fun UnoChessApp() {
                         preferences.saveSettings(updatedSettings)
                     },
                     onRetryProfile = profileViewModel::connect,
+                    onBack = { navController.popBackStack() },
                 )
             }
 
@@ -257,6 +272,8 @@ fun UnoChessApp() {
                 }
 
                 OnlineGameScreen(
+                    serverNow = onlineBattle::serverNow,
+                    onClockExpired = { onlineBattle.checkClock(roomId, profile.uid) },
                     room = onlineState.currentRoom,
                     profile = profile,
                     settings = settings,

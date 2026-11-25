@@ -4,6 +4,7 @@ import kotlin.random.Random
 
 class UnoChessGame(
     private val random: Random = Random.Default,
+    initialState: GameSnapshot? = null,
 ) {
     companion object {
         const val MAX_TURNS = 200
@@ -45,8 +46,28 @@ class UnoChessGame(
         get() = firstTurnRounds.lastOrNull()?.winner == LocalPlayerSlot.PLAYER1
 
     init {
-        reset()
+        if (initialState == null) reset() else restore(initialState)
     }
+
+    /** 온라인 수신 상태를 복원할 때 reset/선공 추첨/턴 드로우를 다시 실행하지 않는다. */
+    private fun restore(state: GameSnapshot) {
+        board = ChessBoard.fromCodes(state.board)
+        currentPlayer = state.currentPlayer
+        completedTurns = state.completedTurns
+        result = state.result
+        hands.getValue(Player.WHITE).addAll(state.whiteHand)
+        hands.getValue(Player.BLACK).addAll(state.blackHand)
+        drawPile.addAll(state.drawPile)
+        discardPile.addAll(state.discardPile)
+        firstTurnRounds = state.firstTurnRounds
+        _logs.addAll(state.logs)
+    }
+
+    fun snapshot(): GameSnapshot = GameSnapshot(
+        board.toCodes(), currentPlayer, completedTurns, result,
+        hand(Player.WHITE), hand(Player.BLACK), drawPile.toList(), discardPile.toList(),
+        firstTurnRounds.toList(), logs,
+    )
 
     fun reset() {
         board = ChessBoard.standard()
