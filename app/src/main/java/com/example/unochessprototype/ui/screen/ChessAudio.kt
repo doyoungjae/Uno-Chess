@@ -26,20 +26,33 @@ internal class ChessAudio(context: Context) {
     private val checkSound = soundPool.load(context.applicationContext, R.raw.chess_check, 1)
     private val endSound = soundPool.load(context.applicationContext, R.raw.chess_end, 1)
     private val cardDrawSound = soundPool.load(context.applicationContext, R.raw.card_draw, 1)
-    private val cardPlaceSound = soundPool.load(context.applicationContext, R.raw.card_place, 1)
 
     private var effectsVolume = 0.8f
+    private var cardDrawLoaded = false
+    private var pendingCardDraws = 0
+
+    init {
+        soundPool.setOnLoadCompleteListener { _, sampleId, status ->
+            if (sampleId == cardDrawSound && status == 0) {
+                cardDrawLoaded = true
+                repeat(pendingCardDraws) {
+                    soundPool.play(cardDrawSound, effectsVolume, effectsVolume, 1, 0, 1f)
+                }
+                pendingCardDraws = 0
+            }
+        }
+    }
 
     fun configure(settings: LocalSettings) {
         effectsVolume = if (settings.effectsEnabled) settings.effectsVolume.coerceIn(0f, 1f) else 0f
     }
 
     fun playCardDraw() {
-        soundPool.play(cardDrawSound, effectsVolume, effectsVolume, 1, 0, 1f)
-    }
-
-    fun playCardPlace() {
-        soundPool.play(cardPlaceSound, effectsVolume, effectsVolume, 1, 0, 1f)
+        if (cardDrawLoaded) {
+            soundPool.play(cardDrawSound, effectsVolume, effectsVolume, 1, 0, 1f)
+        } else {
+            pendingCardDraws++
+        }
     }
 
     fun playMove(captured: Boolean = false) {

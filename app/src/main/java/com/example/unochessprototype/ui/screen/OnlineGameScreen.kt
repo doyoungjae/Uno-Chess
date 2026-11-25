@@ -195,7 +195,6 @@ fun OnlineGameScreen(
         try {
             val removed = old.handFor(profile.uid).filter { it !in game.handFor(profile.uid) }
             for (id in removed) {
-                chessAudio.playCardPlace()
                 val card = OnlineGameRules.card(id)
                 anchors.hand[id]?.let { flights.fly(card, it, anchors.discard, true, true) }
             }

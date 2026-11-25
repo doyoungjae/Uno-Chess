@@ -198,9 +198,13 @@ fun ReleaseGameScreen(
             lateinit var p1Flight: CardFlight
             lateinit var p2Flight: CardFlight
             coroutineScope {
-                launch { p1Flight = flights.fly(round.player1Card, anchors.deck, p1Slot, false, true, 650, keep = true) }
+                launch {
+                    chessAudio.playCardDraw()
+                    p1Flight = flights.fly(round.player1Card, anchors.deck, p1Slot, false, true, 650, keep = true)
+                }
                 launch {
                     delay(200)
+                    chessAudio.playCardDraw()
                     p2Flight = flights.fly(round.player2Card, anchors.deck, p2Slot, false, true, 650, keep = true)
                 }
             }
@@ -335,8 +339,7 @@ fun ReleaseGameScreen(
                             chosenFileForJoker = if (selectedCard?.let(game::actsAsJoker) == true) activeFile else null,
                         )
                         chessAudio.playMove(captured = play.moveOutcome.capturedPiece != null)
-                        chessAudio.playCardPlace()
-                        if (game.result == null && game.board.isKingInCheck(game.currentPlayer)) {
+                                if (game.result == null && game.board.isKingInCheck(game.currentPlayer)) {
                             chessAudio.playCheck()
                         }
 
@@ -440,8 +443,7 @@ fun ReleaseGameScreen(
                                     val from = anchors.hand[card.id] ?: return@forEachIndexed
                                     launch {
                                         delay(index * 140L)
-                                        chessAudio.playCardPlace()
-                                        flights.fly(card, from, anchors.discard, true, true, 360)
+                                                                flights.fly(card, from, anchors.discard, true, true, 360)
                                         shownDiscard = card
                                     }
                                 }
