@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Flag
+import androidx.compose.material.icons.rounded.Handshake
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -446,19 +449,44 @@ fun OnlineGameScreen(
     if (game.hasResult()) {
         val isDraw = game.resultType == OnlineResultType.DRAW
         val isWinner = game.winnerUid == profile.uid
-        when {
-            isDraw -> AlertDialog(
-                onDismissRequest = { if (!busy) onExitFinished() },
-                title = { Text("무승부입니다", modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
-                text = {
-                    Text(game.resultReason.ifBlank { "승자 없이 경기가 종료되었습니다." },
-                        modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
-                },
-                confirmButton = { Button(onClick = onExitFinished, enabled = !busy) { Text("돌아가기") } },
-            )
-            isWinner -> VictoryScreen(onReplay = onExitFinished)
-            else -> DefeatScreen(onReplay = onExitFinished)
+        val resultColor = when {
+            isDraw -> UnoChessColors.Muted
+            isWinner -> UnoChessColors.Lime
+            else -> UnoChessColors.Danger
         }
+        val resultIcon = when {
+            isDraw -> Icons.Rounded.Handshake
+            isWinner -> Icons.Rounded.EmojiEvents
+            else -> Icons.Rounded.Flag
+        }
+        val title = when {
+            isDraw -> "무승부입니다"
+            isWinner -> "승리했습니다!"
+            else -> "패배했습니다"
+        }
+        // 엔진의 승자 관점 사유를 각 사용자의 관점으로 표시한다. 저장된 결과는 변경하지 않는다.
+        val reason = when {
+            isDraw -> game.resultReason.ifBlank { "승자 없이 경기가 종료되었습니다." }
+            "시간" in game.resultReason -> if (isWinner) "상대의 제한 시간이 끝났습니다." else "나의 제한 시간이 끝났습니다."
+            "나갔" in game.resultReason || "기권" in game.resultReason ->
+                if (isWinner) "상대가 기권하여 승리했습니다." else "기권하여 경기가 종료되었습니다."
+            "KING" in game.resultReason -> if (isWinner) "상대의 킹을 포획했습니다." else "나의 킹이 포획되었습니다."
+            else -> game.resultReason.ifBlank { "온라인 경기가 종료되었습니다." }
+        }
+        AlertDialog(
+            onDismissRequest = { if (!busy) onExitFinished() },
+            icon = { Icon(resultIcon, contentDescription = null, tint = resultColor, modifier = Modifier.size(40.dp)) },
+            title = {
+                Text(title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,
+                    color = resultColor, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(reason, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+            },
+            confirmButton = {
+                Button(onClick = onExitFinished, enabled = !busy) { Text("홈으로 돌아가기") }
+            },
+        )
     }
 
 }
