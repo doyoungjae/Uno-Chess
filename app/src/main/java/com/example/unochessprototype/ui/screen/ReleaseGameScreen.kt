@@ -420,7 +420,7 @@ fun ReleaseGameScreen(
                         selectedCardId = card.id
                         focusedCardId = card.id
                         selectedFrom = null
-                        activeFile = if (game.actsAsJoker(card)) null else card.number!! - 1
+                        activeFile = if (game.actsAsJoker(card)) null else game.fileForNumber(card.number!!)
                     }
                 },
             )
@@ -649,7 +649,7 @@ private fun PlayerHandPanel(
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
-                    if (canExchange) "2장 탭 → 버리고 1장 드로우" else "탭해서 선택",
+                    if (canExchange) "2장 탭 → 버리고 2장 드로우" else "탭해서 선택",
                     color = UnoChessColors.Muted,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,

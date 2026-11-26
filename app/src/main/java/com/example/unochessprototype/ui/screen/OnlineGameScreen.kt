@@ -385,7 +385,7 @@ fun OnlineGameScreen(
                                 if (OnlineGameRules.actsAsJoker(game, profile.uid, id)) {
                                     activeFile = null
                                 } else {
-                                    activeFile = card.number!! - 1
+                                    activeFile = OnlineGameRules.fileForNumber(game, profile.uid, card.number!!)
                                 }
                             }
                         }

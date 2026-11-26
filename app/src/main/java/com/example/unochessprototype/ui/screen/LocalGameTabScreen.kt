@@ -69,7 +69,7 @@ fun LocalGameTabScreen(
             Column(modifier = Modifier.padding(15.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("매치 규칙", color = UnoChessColors.Lime, fontWeight = FontWeight.Black)
                 RuleLine("턴 시작 1장 드로우(6장) → 1장 사용해 5장 유지")
-                RuleLine("쓸 카드가 없으면 2장 버리고 1장 드로우")
+                RuleLine("쓸 카드가 없으면 2장 버리고 2장 드로우 · 낼 수 있을 때까지 반복(턴 유지)")
                 RuleLine("각자 10분 · 시간 초과 시 패배")
                 RuleLine("숫자 1~8 → A~H 열 활성화")
                 RuleLine("바닥 카드와 같은 색 또는 같은 숫자만 낼 수 있음 (JOKER는 언제나)")

@@ -33,7 +33,7 @@ class UnoChessGameEndgameTest {
     }
 
     @Test
-    fun noPlayableCardDiscardsTwoAndDrawsOne() {
+    fun noPlayableCardDiscardsTwoDrawsTwoAndKeepsTurn() {
         val game = UnoChessGame(Random(1))
         game.forceHandsForTest(ghHand, blackHand)
         val board = game.boardForTest()
@@ -47,10 +47,11 @@ class UnoChessGameEndgameTest {
         assertTrue(game.canExchangeTwoCards())
 
         val result = game.exchangeTwoCards(setOf(7, 15))
-        assertEquals(1, result.drawnCards.size)
-        assertEquals(5, game.hand(Player.WHITE).size)
-        assertEquals(6, game.hand(Player.BLACK).size)
-        assertEquals(Player.BLACK, game.currentPlayer)
+        assertEquals(2, result.drawnCards.size)
+        assertEquals(6, game.hand(Player.WHITE).size)
+        assertEquals(5, game.hand(Player.BLACK).size)
+        assertEquals(Player.WHITE, game.currentPlayer)
+        assertEquals(0, game.completedTurns)
     }
 
     @Test
@@ -144,7 +145,8 @@ class UnoChessGameEndgameTest {
         assertTrue(game.playableCards().isEmpty())
         assertTrue(game.canExchangeTwoCards())
         game.exchangeTwoCards(setOf(17, 18))
-        assertEquals(5, game.hand(Player.WHITE).size)
+        assertEquals(6, game.hand(Player.WHITE).size)
+        assertEquals(Player.WHITE, game.currentPlayer)
         assertEquals(18, game.topDiscard()?.id)
     }
 

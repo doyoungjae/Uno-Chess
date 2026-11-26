@@ -5,6 +5,8 @@ import kotlin.random.Random
 class UnoChessGame(
     private val random: Random = Random.Default,
     initialState: GameSnapshot? = null,
+    /** 온라인처럼 BLACK 화면이 180도 뒤집혀 보이면 true. 카드 숫자 열을 BLACK 시점으로 센다. */
+    private val blackViewFlipped: Boolean = false,
 ) {
     companion object {
         const val MAX_TURNS = 200
@@ -143,13 +145,17 @@ class UnoChessGame(
         return card.color == top.color || card.number == top.number
     }
 
+    /** 카드 숫자 N → 카드를 내는 플레이어 화면 왼쪽에서 N번째 열의 보드 인덱스. */
+    fun fileForNumber(number: Int, player: Player = currentPlayer): Int =
+        if (player == Player.BLACK && blackViewFlipped) 8 - number else number - 1
+
     fun playableFiles(card: UnoCard, player: Player = currentPlayer): Set<Int> {
         if (result != null || !matchesTopDiscard(card, player)) return emptySet()
         val movable = board.movableFiles(player)
         return if (actsAsJoker(card, player)) {
             movable
         } else {
-            val file = card.number!! - 1
+            val file = fileForNumber(card.number!!, player)
             if (file in movable) setOf(file) else emptySet()
         }
     }
@@ -168,7 +174,7 @@ class UnoChessGame(
         val file = if (actsAsJoker(card)) {
             chosenFileForJoker ?: return emptyList()
         } else {
-            card.number!! - 1
+            fileForNumber(card.number!!)
         }
 
         if (file !in files) return emptyList()
@@ -198,7 +204,7 @@ class UnoChessGame(
         val file = if (actsAsJoker(card, player)) {
             requireNotNull(chosenFileForJoker) { "Joker requires a file selection." }
         } else {
-            card.number!! - 1
+            fileForNumber(card.number!!, player)
         }
 
         require(file in allowedFiles) { "This card cannot activate a movable file right now." }
@@ -262,11 +268,10 @@ class UnoChessGame(
                 "${discarded.joinToString { it.displayName() }} 2장 버림"
         )
 
-        val drawn = listOf(drawCard(player))
-        check(playerHand.size == HAND_SIZE) { "Hand-size invariant broken after two-card exchange." }
-        log("${player.displayName()} · ${drawn.single().displayName()} 1장 드로우 · 손패 5장 유지")
-
-        finishTurn()
+        // 턴은 넘어가지 않는다. 2장을 뽑아 6장을 유지하고, 낼 카드가 생길 때까지 교환을 반복할 수 있다.
+        val drawn = listOf(drawCard(player), drawCard(player))
+        check(playerHand.size == HAND_SIZE + 1) { "Hand-size invariant broken after two-card exchange." }
+        log("${player.displayName()} · ${drawn.joinToString { it.displayName() }} 2장 드로우 · 턴 유지")
 
         return ExchangeResult(discarded, drawn, result)
     }
