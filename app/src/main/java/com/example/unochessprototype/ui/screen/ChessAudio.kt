@@ -43,19 +43,8 @@ internal class ChessAudio(context: Context) {
         }
     }
 
-
-    private var effectsVolume = 0.8f
-    fun configure(settings: com.example.unochessprototype.data.LocalSettings) {
-        effectsVolume = if (settings.effectsEnabled) settings.effectsVolume.coerceIn(0f, 1f) else 0f
-        music?.setVolume(settings.bgmVolume * 0.23f, settings.bgmVolume * 0.23f)
-        if (settings.bgmEnabled) startMusic() else stopMusic()
-    }
-    fun startMusic() {
-        if (music?.isPlaying == false) music?.start()
-
     fun configure(settings: LocalSettings) {
         effectsVolume = if (settings.effectsEnabled) settings.effectsVolume.coerceIn(0f, 1f) else 0f
-
     }
 
     fun playCardDraw() {
@@ -85,17 +74,6 @@ internal class ChessAudio(context: Context) {
 }
 
 @Composable
-
-internal fun rememberChessAudio(settings: com.example.unochessprototype.data.LocalSettings): ChessAudio {
-    val context = LocalContext.current
-    val audio = remember(context) { ChessAudio(context) }
-    DisposableEffect(audio) {
-
-        onDispose {
-            audio.stopMusic()
-            audio.release()
-        }
-
 internal fun rememberChessAudio(settings: LocalSettings): ChessAudio {
     val context = LocalContext.current
     val audio = remember(context) { ChessAudio(context) }

@@ -13,11 +13,7 @@ object OnlineGameRules {
 
     fun createInitial(ownerUid: String, guestUid: String, random: Random = Random.Default): OnlineGameState {
         require(ownerUid.isNotBlank() && guestUid.isNotBlank() && ownerUid != guestUid)
-
         val engine = UnoChessGame(random, blackViewFlipped = true)
-
-        val engine = UnoChessGame(random)
-
         val white = if (engine.player1Starts) ownerUid else guestUid
         return encode(OnlineGameState(version = VERSION, ownerUid = ownerUid, guestUid = guestUid,
             whiteUid = white, blackUid = if (white == ownerUid) guestUid else ownerUid), engine)
@@ -49,10 +45,7 @@ object OnlineGameRules {
             state.handFor(state.whiteUid).map(::card), state.handFor(state.blackUid).map(::card),
             state.drawPile.map(::card), state.discardPile.map(::card),
             state.firstTurnRounds.map { FirstTurnRound(card(it.ownerCardId), card(it.guestCardId)) }, state.logs,
-
         ), blackViewFlipped = true)
-
-        ))
     }
 
     private fun encode(state: OnlineGameState, engine: UnoChessGame): OnlineGameState {
