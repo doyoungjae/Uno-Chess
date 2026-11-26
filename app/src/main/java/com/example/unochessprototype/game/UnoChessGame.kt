@@ -5,8 +5,9 @@ import kotlin.random.Random
 class UnoChessGame(
     private val random: Random = Random.Default,
     initialState: GameSnapshot? = null,
-    /** 온라인처럼 BLACK 화면이 180도 뒤집혀 보이면 true. 카드 숫자 열을 BLACK 시점으로 센다. */
+
     private val blackViewFlipped: Boolean = false,
+
 ) {
     companion object {
         const val MAX_TURNS = 200

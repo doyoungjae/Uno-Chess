@@ -165,6 +165,9 @@ fun OnlineGameScreen(
                 val guest = OnlineGameRules.card(round.guestCardId)
                 val decision = com.example.unochessprototype.game.FirstTurnRound(owner, guest)
                 val first = flights.fly(owner, anchors.deck, left, false, true, 650, keep = true)
+                chessAudio.playCardDraw()
+                val first = flights.fly(owner, anchors.deck, left, false, true, 650, keep = true)
+                chessAudio.playCardDraw()
                 val second = flights.fly(guest, anchors.deck, right, false, true, 650, keep = true)
                 introText = if (decision.winner == null) "동점 · 다시 뽑기"
                     else "${room.displayNameFor(game.whiteUid)} · WHITE 선공"
@@ -200,6 +203,10 @@ fun OnlineGameScreen(
             hidden = added.toSet()
             withFrameNanos { }; withFrameNanos { }
             for (id in added) anchors.hand[id]?.let { flights.fly(OnlineGameRules.card(id), anchors.deck, it, false, true, 420) }
+            for (id in added) {
+                chessAudio.playCardDraw()
+                anchors.hand[id]?.let { flights.fly(OnlineGameRules.card(id), anchors.deck, it, false, true, 420) }
+            }
         } finally { hidden = emptySet(); animating = false }
     }
 

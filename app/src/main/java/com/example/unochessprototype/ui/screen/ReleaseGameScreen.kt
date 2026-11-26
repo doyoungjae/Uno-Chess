@@ -173,6 +173,7 @@ fun ReleaseGameScreen(
         val drawn = game.hand().lastOrNull() ?: return
         if (game.result != null) return
         cardBusy = true
+        chessAudio.playCardDraw()
         hiddenCardIds = hiddenCardIds + drawn.id
         withFrameNanos { }
         anchors.hand[drawn.id]?.let { target ->
@@ -197,9 +198,13 @@ fun ReleaseGameScreen(
             lateinit var p1Flight: CardFlight
             lateinit var p2Flight: CardFlight
             coroutineScope {
-                launch { p1Flight = flights.fly(round.player1Card, anchors.deck, p1Slot, false, true, 650, keep = true) }
+                launch {
+                    chessAudio.playCardDraw()
+                    p1Flight = flights.fly(round.player1Card, anchors.deck, p1Slot, false, true, 650, keep = true)
+                }
                 launch {
                     delay(200)
+                    chessAudio.playCardDraw()
                     p2Flight = flights.fly(round.player2Card, anchors.deck, p2Slot, false, true, 650, keep = true)
                 }
             }
@@ -334,7 +339,7 @@ fun ReleaseGameScreen(
                             chosenFileForJoker = if (selectedCard?.let(game::actsAsJoker) == true) activeFile else null,
                         )
                         chessAudio.playMove(captured = play.moveOutcome.capturedPiece != null)
-                        if (game.result == null && game.board.isKingInCheck(game.currentPlayer)) {
+                                if (game.result == null && game.board.isKingInCheck(game.currentPlayer)) {
                             chessAudio.playCheck()
                         }
 
@@ -438,13 +443,14 @@ fun ReleaseGameScreen(
                                     val from = anchors.hand[card.id] ?: return@forEachIndexed
                                     launch {
                                         delay(index * 140L)
-                                        flights.fly(card, from, anchors.discard, true, true, 360)
+                                                                flights.fly(card, from, anchors.discard, true, true, 360)
                                         shownDiscard = card
                                     }
                                 }
                             }
                             // 새로 뽑는 1장(뒷면)이 덱에서 손패로 들어온다.
                             anchors.hand[ids.first()]?.let { slot ->
+                                chessAudio.playCardDraw()
                                 flights.fly(null, anchors.deck, slot, false, false, 380)
                             }
                             game.exchangeTwoCards(ids.toSet())

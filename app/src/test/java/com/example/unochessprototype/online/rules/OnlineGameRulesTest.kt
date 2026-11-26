@@ -14,6 +14,7 @@ class OnlineGameRulesTest {
             val localRandom = Random(seed)
             val onlineRandom = Random(seed)
             val local = UnoChessGame(localRandom, blackViewFlipped = true)
+            val local = UnoChessGame(localRandom)
             var online = OnlineGameRules.createInitial("owner", "guest", onlineRandom)
             assertEquals(local.snapshot(), OnlineGameRules.engine(online).snapshot())
             repeat(200) {
@@ -159,6 +160,8 @@ class OnlineGameRulesTest {
         assertEquals(40, (state.ownerHand + state.guestHand + state.drawPile + state.discardPile).toSet().size)
     }
 
+=======
+>>>>>>> origin/feature/sound
     @Test(expected = IllegalArgumentException::class)
     fun legacyGameCannotSilentlyUseNewRules() {
         OnlineGameRules.engine(OnlineGameState())
